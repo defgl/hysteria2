@@ -184,12 +184,18 @@ inst_site(){
 
 inst_hyv2(){
 
-    if [[ -f "/usr/local/bin/hysteria" ]]; then
-        echo "HYSTERIA 2 INSTALLED"
+    warpv6=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
+    warpv4=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
+    if [[ $warpv4 =~ on|plus || $warpv6 =~ on|plus ]]; then
+        wg-quick down wgcf >/dev/null 2>&1
+        systemctl stop warp-go >/dev/null 2>&1
+        realip
+        systemctl start warp-go >/dev/null 2>&1
+        wg-quick up wgcf >/dev/null 2>&1
     else
-        echo "HYSTERIA 2 INSTALLATION FAILED, PLEASE RERUN SCRIPT" && exit 1
+        realip
     fi
-
+    
     if netstat -tuln | grep -q ":80 "; then
         echo "Port 80 is already in use. Exiting..."
         exit 1
@@ -197,6 +203,12 @@ inst_hyv2(){
 
     # Install Hysteria 2
     bash <(curl -fsSL https://get.hy2.sh/)
+
+    if [[ -f "/usr/local/bin/hysteria" ]]; then
+        echo "HYSTERIA 2 INSTALLED"
+    else
+        echo "HYSTERIA 2 INSTALLATION FAILED, PLEASE RERUN SCRIPT" && exit 1
+    fi
 
     # 询问用户 Hysteria 配置
     inst_cert
