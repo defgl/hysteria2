@@ -31,32 +31,33 @@ yellow(){
 }
 
 # Define system types and their corresponding package management commands
-declare -A OS_COMMANDS=(
-    ["debian|ubuntu"]="apt"
-    ["centos|red hat|kernel|oracle linux|alma|rocky"]="yum"
-    ["fedora"]="yum"
-    ["amazon linux"]="yum"
-)
+REGEX=("debian" "ubuntu" "centos|red hat|kernel|oracle linux|alma|rocky" "'amazon linux'" "fedora")
+RELEASE=("Debian" "Ubuntu" "CentOS" "CentOS" "Fedora")
+PACKAGE_UPDATE=("apt-get update" "apt-get update" "yum -y update" "yum -y update" "yum -y update")
+PACKAGE_INSTALL=("apt -y install" "apt -y install" "yum -y install" "yum -y install" "yum -y install")
+PACKAGE_REMOVE=("apt -y remove" "apt -y remove" "yum -y remove" "yum -y remove" "yum -y remove")
+PACKAGE_UNINSTALL=("apt -y autoremove" "apt -y autoremove" "yum -y autoremove" "yum -y autoremove" "yum -y autoremove")
 
-# Packages to be installed
-REQUIRED_PACKAGES="curl wget sudo qrencode procps iptables-persistent netfilter-persistent"
-
-# Check if running as root
 [[ $EUID -ne 0 ]] && echo "PLEASE RUN THIS SCRIPT AS ROOT" && exit 1
 
-# Get operating system information
-SYS_INFO="$(grep -i pretty_name /etc/os-release 2>/dev/null || hostnamectl 2>/dev/null || lsb_release -sd 2>/dev/null || cat /etc/*release 2>/dev/null)"
+CMD=("$(grep -i pretty_name /etc/os-release 2>/dev/null | cut -d \" -f2)" "$(hostnamectl 2>/dev/null | grep -i system | cut -d : -f2)" "$(lsb_release -sd 2>/dev/null)" "$(grep -i description /etc/lsb-release 2>/dev/null | cut -d \" -f2)" "$(grep . /etc/redhat-release 2>/dev/null)" "$(grep . /etc/issue 2>/dev/null | cut -d \\ -f1 | sed '/^[ ]*$/d')")
 
-# Determine the type of operating system and its package management command
-for regex in "${!OS_COMMANDS[@]}"; do
-    if [[ $SYS_INFO =~ $regex ]]; then
-        PKG_MANAGER=${OS_COMMANDS[$regex]}
-        break
-    fi
+for i in "${CMD[@]}"; do
+    SYS="$i" && [[ -n $SYS ]] && break
 done
 
-# If the operating system is not supported, exit the script
-[[ -z $PKG_MANAGER ]] && echo "YOUR OPERATING SYSTEM IS NOT SUPPORTED" && exit 1
+for ((int = 0; int < ${#REGEX[@]}; int++)); do
+    [[ $(echo "$SYS" | tr '[:upper:]' '[:lower:]') =~ ${REGEX[int]} ]] && SYSTEM="${RELEASE[int]}" && [[ -n $SYSTEM ]] && break
+done
+
+[[ -z $SYSTEM ]] && echo "YOUR OPERATING SYSTEM IS NOT SUPPORTED" && exit 1
+
+if [[ -z $(type -P curl) ]]; then
+    if [[ ! $SYSTEM == "CentOS" ]]; then
+        ${PACKAGE_UPDATE[int]}
+    fi
+    ${PACKAGE_INSTALL[int]} curl
+fi
 
 # Update the package list and install the required packages
 $PKG_MANAGER update
