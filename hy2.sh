@@ -34,9 +34,14 @@ yellow(){
 REGEX=("debian" "ubuntu" "centos|red hat|kernel|oracle linux|alma|rocky" "'amazon linux'" "fedora")
 RELEASE=("Debian" "Ubuntu" "CentOS" "CentOS" "Fedora")
 PACKAGE_UPDATE=("apt-get update" "apt-get update" "yum -y update" "yum -y update" "yum -y update")
-PACKAGE_INSTALL=("apt -y install" "apt -y install" "yum -y install" "yum -y install" "yum -y install")
+PACKAGE_INSTALL=("apt -y install" "yum -y install")
 PACKAGE_REMOVE=("apt -y remove" "apt -y remove" "yum -y remove" "yum -y remove" "yum -y remove")
 PACKAGE_UNINSTALL=("apt -y autoremove" "apt -y autoremove" "yum -y autoremove" "yum -y autoremove" "yum -y autoremove")
+
+# Example index, set this based on the detected OS
+int=0 # assuming 0 for Debian/Ubuntu, 1 for CentOS, etc.
+
+${PACKAGE_INSTALL[int]} curl wget
 
 [[ $EUID -ne 0 ]] && echo "PLEASE RUN THIS SCRIPT AS ROOT" && exit 1
 
@@ -216,7 +221,7 @@ inst_site(){
     yellow "HYSTERIA 2 MASQUERADE SITE SET TO: $proxysite"
 }
 
-inst_hyv2(){
+inst_hyv2() {
 
     wget -N https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy2/install_server.sh
     bash install_server.sh
@@ -292,6 +297,7 @@ transport:
   udp:
     hopInterval: 30s 
 EOF
+
     cat << EOF > /root/hy/hy-client.json
 {
   "server": "$last_ip:$last_port",
@@ -316,11 +322,12 @@ EOF
   }
 }
 EOF
+
     # Generate SURGE configuration file
     cat << EOF > /root/hy/surge-hysteria.conf
-    [Proxy]
-    Hysteria = hysteria, $hy_domain, $last_port, password=$auth_pwd, sni=$domain, obfs=http, obfs-host=$domain, download-bandwidth=100
-    EOF
+[Proxy]
+Hysteria = hysteria, $hy_domain, $last_port, password=$auth_pwd, sni=$domain, obfs=http, obfs-host=$domain, download-bandwidth=100
+EOF
 
     url="hysteria2://$auth_pwd@$last_ip:$last_port/?insecure=1&sni=$hy_domain#Misaka-Hysteria2"
     echo $url > /root/hy/url.txt
