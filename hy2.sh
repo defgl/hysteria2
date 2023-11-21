@@ -523,5 +523,3 @@ menu() {
 }
 
 menu
-
-menu
