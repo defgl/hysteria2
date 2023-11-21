@@ -70,24 +70,22 @@ realip(){
 }
 
 inst_cert(){
-    green "Hysteria 2 协议证书申请方式如下："
-    echo ""
-    echo -e " ${GREEN}1.${PLAIN} 必应自签证书 ${YELLOW}（默认）${PLAIN}"
-    echo -e " ${GREEN}2.${PLAIN} Acme 脚本自动申请"
-    echo -e " ${GREEN}3.${PLAIN} 自定义证书路径"
-    echo ""
-    read -rp "请输入选项 [1-3]: " certInput
-    if [[ $certInput == 2 ]]; then
-        cert_path="/root/cert.crt"
-        key_path="/root/private.key"
+    green "APPLYING FOR CERT："
+    echo -e " ${GREEN}1.${PLAIN} BING SELF-SIGNED CERT ${YELLOW}(DEFAULT)${PLAIN}"
+    echo -e " ${GREEN}2.${PLAIN} ACME AUTO SCRIPT"
+    echo -e " ${GREEN}3.${PLAIN} CUSTOM CERT PATH"
+    read -rp "PLEASE ENTER AN OPTION [1-3]: " certInput
+    case $certInput in
+        2)
+            cert_path="/root/cert.crt"
+            key_path="/root/private.key"
+            chmod -R 777 /root
 
-        chmod -R 777 /root # 让 Hysteria 主程序访问到 /root 目录
-
-        if [[ -f /root/cert.crt && -f /root/private.key ]] && [[ -s /root/cert.crt && -s /root/private.key ]] && [[ -f /root/ca.log ]]; then
-            domain=$(cat /root/ca.log)
-            green "检测到原有域名：$domain 的证书，正在应用"
-            hy_domain=$domain
-        else
+            if [[ -f /root/cert.crt && -f /root/private.key ]] && [[ -s /root/cert.crt && -s /root/private.key ]] && [[ -f /root/ca.log ]]; then
+                domain=$(cat /root/ca.log)
+                echo -e "${GREEN}EXISTING CERTIFICATE DETECTED FOR DOMAIN: $domain${PLAIN}"
+                hy_domain=$domain
+            else
             WARPv4Status=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
             WARPv6Status=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
             if [[ $WARPv4Status =~ on|plus ]] || [[ $WARPv6Status =~ on|plus ]]; then
@@ -100,9 +98,9 @@ inst_cert(){
                 realip
             fi
             
-            read -p "请输入需要申请证书的域名：" domain
-            [[ -z $domain ]] && red "未输入域名，无法执行操作！" && exit 1
-            green "已输入的域名：$domain" && sleep 1
+            read -p "ENTER DOMAIN FOR CERTIFICATE APPLICATION: " domain
+            [[ -z $domain ]] && echo "NO DOMAIN ENTERED, OPERATION CANNOT BE PERFORMED!" && exit 1
+            echo "DOMAIN ENTERED: $domain" && sleep 1
             domainIP=$(curl -sm8 ipget.net/?ip="${domain}")
             if [[ $domainIP == $ip ]]; then
                 ${PACKAGE_INSTALL[int]} curl wget sudo socat openssl
@@ -129,42 +127,39 @@ inst_cert(){
                     echo $domain > /root/ca.log
                     sed -i '/--cron/d' /etc/crontab >/dev/null 2>&1
                     echo "0 0 * * * root bash /root/.acme.sh/acme.sh --cron -f >/dev/null 2>&1" >> /etc/crontab
-                    green "证书申请成功! 脚本申请到的证书 (cert.crt) 和私钥 (private.key) 文件已保存到 /root 文件夹下"
-                    yellow "证书crt文件路径如下: /root/cert.crt"
-                    yellow "私钥key文件路径如下: /root/private.key"
+                    green "CERTIFICATE APPLICATION SUCCESSFUL! THE CERTIFICATE (CERT.CRT) AND PRIVATE KEY (PRIVATE.KEY) FILES APPLIED BY THE SCRIPT HAVE BEEN SAVED TO THE /ROOT FOLDER"
+                    yellow "CERTIFICATE CRT FILE PATH: /ROOT/CERT.CRT"
+                    yellow "PRIVATE KEY KEY FILE PATH: /ROOT/PRIVATE.KEY"
                     hy_domain=$domain
                 fi
             else
-                red "当前域名解析的IP与当前VPS使用的真实IP不匹配"
-                green "建议如下："
-                yellow "1. 请确保CloudFlare小云朵为关闭状态(仅限DNS), 其他域名解析或CDN网站设置同理"
-                yellow "2. 请检查DNS解析设置的IP是否为VPS的真实IP"
-                yellow "3. 脚本可能跟不上时代, 建议截图发布到GitHub Issues、GitLab Issues、论坛或TG群询问"
+                red "THE IP RESOLVED BY THE CURRENT DOMAIN DOES NOT MATCH THE REAL IP USED BY THE CURRENT VPS"
                 exit 1
             fi
         fi
-    elif [[ $certInput == 3 ]]; then
-        read -p "请输入公钥文件 crt 的路径：" cert_path
-        yellow "公钥文件 crt 的路径：$cert_path "
-        read -p "请输入密钥文件 key 的路径：" key_path
-        yellow "密钥文件 key 的路径：$key_path "
-        read -p "请输入证书的域名：" domain
-        yellow "证书域名：$domain"
-        hy_domain=$domain
-    else
-        green "将使用必应自签证书作为 Hysteria 2 的节点证书"
-
-        cert_path="/etc/hysteria/cert.crt"
-        key_path="/etc/hysteria/private.key"
-        openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
-        openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
-        chmod 777 /etc/hysteria/cert.crt
-        chmod 777 /etc/hysteria/private.key
-        hy_domain="www.bing.com"
-        domain="www.bing.com"
-    fi
+            ;;
+        3)
+            read -p "ENTER PUBLIC KEY CRT PATH: " cert_path
+            echo -e "${YELLOW}PUBLIC KEY CRT PATH: $cert_path${PLAIN}"
+            read -p "ENTER PRIVATE KEY PATH: " key_path
+            echo -e "${YELLOW}PRIVATE KEY PATH: $key_path${PLAIN}"
+            read -p "ENTER DOMAIN NAME FOR CERTIFICATE: " domain
+            echo -e "${YELLOW}CERTIFICATE DOMAIN: $domain${PLAIN}"
+            hy_domain=$domain
+            ;;
+        *)
+            echo -e "${GREEN}USING SELF-SIGNED CERT FOR HYSTERIA 2 NODE${PLAIN}"
+            cert_path="/etc/hysteria/cert.crt"
+            key_path="/etc/hysteria/private.key"
+            openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
+            openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
+            chmod 777 /etc/hysteria/cert.crt
+            chmod 777 /etc/hysteria/private.key
+            hy_domain="www.bing.com"
+            domain="www.bing.com"
+            ;;
+    esac
 }
-
 
 inst_port(){
     iptables -t nat -F PREROUTING >/dev/null 2>&1
