@@ -6,6 +6,8 @@ RED="\033[31m"
 GREEN="\033[32m"
 YELLOW="\033[33m"
 PLAIN="\033[0m"
+LIGHT_RED="\033[91m"
+LIGHT_BLUE="\033[94m"
 
 red(){
     echo -e "\033[31m\033[01m$1\033[0m"
@@ -393,9 +395,9 @@ showconf(){
 
 menu() {
     clear
-    echo -e "     ${LIGHT_RED}HYSTERIA II${PLAIN}"
+    echo -e " ${LIGHT_RED}HYSTERIA II${PLAIN}"
     echo ""
-    echo -e "${LIGHT_BLUE}AT WHAT SPEED MUST I LIVE, TO BE ABLE TO SEE YOU AGAIN?${PLAIN}"                      
+    echo -e " ${LIGHT_BLUE}AT WHAT SPEED MUST I LIVE, TO BE ABLE TO SEE YOU AGAIN?${PLAIN}"                      
     echo ""
     echo " -------------"
     echo -e " ${GREEN}3.${PLAIN} INSTALL${PLAIN}"
