@@ -190,6 +190,14 @@ inst_hyv2(){
         echo "HYSTERIA 2 INSTALLATION FAILED, PLEASE RERUN SCRIPT" && exit 1
     fi
 
+    if netstat -tuln | grep -q ":80 "; then
+        echo "Port 80 is already in use. Exiting..."
+        exit 1
+    fi
+
+    # Install Hysteria 2
+    bash <(curl -fsSL https://get.hy2.sh/)
+
     # 询问用户 Hysteria 配置
     inst_cert
     inst_port
@@ -401,7 +409,7 @@ menu() {
     echo ""
     echo " -------------"
     echo -e " ${GREEN}1.${PLAIN} INSTALL${PLAIN}"
-    echo -e " ${GREEN}2.${PLAIN} ${LIGHT_RED}UNINSTALL${PLAIN}"
+    echo -e " ${GREEN}2.${PLAIN} ${RED}UNINSTALL${PLAIN}"
     echo " -------------"
     echo -e " ${GREEN}3.${PLAIN} STOP, START, RESTART"
     echo -e " ${GREEN}4.${PLAIN} MODIF CONFIG"
