@@ -400,23 +400,24 @@ menu() {
     echo -e " ${LIGHT_BLUE}AT WHAT SPEED MUST I LIVE, TO BE ABLE TO SEE YOU AGAIN?${PLAIN}"                      
     echo ""
     echo " -------------"
-    echo -e " ${GREEN}3.${PLAIN} INSTALL${PLAIN}"
-    echo -e " ${GREEN}4.${PLAIN} ${LIGHT_RED}UNINSTALL${PLAIN}"
+    echo -e " ${GREEN}1.${PLAIN} INSTALL${PLAIN}"
+    echo -e " ${GREEN}2.${PLAIN} ${LIGHT_RED}UNINSTALL${PLAIN}"
     echo " -------------"
-    echo -e " ${GREEN}5.${PLAIN} STOP, START, RESTART"
-    echo -e " ${GREEN}6.${PLAIN} MODIF CONFIG"
-    echo -e " ${GREEN}7.${PLAIN} DISPLAY CONFIG"
+    echo -e " ${GREEN}3.${PLAIN} STOP, START, RESTART"
+    echo -e " ${GREEN}4.${PLAIN} MODIF CONFIG"
+    echo -e " ${GREEN}5.${PLAIN} DISPLAY CONFIG"
     echo " -------------"
     echo -e " ${GREEN}0.${PLAIN} EXIT"
     echo ""
-    read -rp "Please enter an option [0-7]: " menuInput
+    read -rp "PLEASE ENTER AN OPTION [0-7]: " menuInput
     case $menuInput in
-        3 ) inst_hyv2 ;;
-        4 ) unst_hyv2 ;;
-        5 ) control_hy ;;
-        6 ) changeconf ;;
-        7 ) showconf ;;
-        * ) exit 1 ;;
+        1 ) inst_hyv2 ;;
+        2 ) unst_hyv2 ;;
+        3 ) control_hy ;;
+        4 ) changeconf ;;
+        5 ) showconf ;;
+        9 ) exit 1 ;;
+        * ) menu ;;
     esac
 }
 
