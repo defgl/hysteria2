@@ -255,7 +255,8 @@ EOF
     else
         last_ip=$ip
     fi
-
+    
+    mkdir /root/hy
     url="hysteria2://$auth_pwd@$last_ip:$last_port/?insecure=1&sni=$hy_domain"
     echo $url > /root/hy/url.txt
 
