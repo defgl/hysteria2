@@ -70,66 +70,47 @@ realip(){
 }
 
 inst_cert(){
-    green "HYSTERIA PROTOCOL CERTIFICATE APPLICATION METHODS ARE AS FOLLOWS:"
+    echo "HYSTERIA 2 PROTOCOL CERTIFICATE APPLICATION METHODS ARE AS FOLLOWS:"
     echo ""
-    echo -e " ${GREEN}1.${PLAIN} SELF-SIGNED CERTIFICATE ${YELLOW}(DEFAULT)${PLAIN}"
-    echo -e " ${GREEN}2.${PLAIN} ACME SCRIPT AUTO APPLICATION"
+    echo -e " ${GREEN}1.${PLAIN} SELF-SIGNED CERTIFICATE FROM BING ${YELLOW}(DEFAULT)${PLAIN}"
+    echo -e " ${GREEN}2.${PLAIN} AUTOMATIC APPLICATION WITH ACME SCRIPT"
     echo -e " ${GREEN}3.${PLAIN} CUSTOM CERTIFICATE PATH"
     echo ""
     read -rp "PLEASE ENTER OPTION [1-3]: " certInput
-    if [[ $certInput == 2 ]]; then
-        cert_path="/root/cert.crt"
-        key_path="/root/private.key"
-        chmod a+x /root
-    
-        if [[ ! -f /root/ca.log ]]; then
-            wget -N https://gitlab.com/Misaka-blog/acme-script/-/raw/main/acme.sh && bash acme.sh
-        fi
-    
-        if [[ -f /root/cert.crt && -f /root/private.key ]] && [[ -s /root/cert.crt && -s /root/private.key ]]; then
-            domain=$(cat /root/ca.log)
-            green "DETECTED EXISTING CERTIFICATE FOR DOMAIN: $domain, APPLYING NOW"
+    case $certInput in
+        2)
+            cert_path="/root/cert.crt"
+            key_path="/root/private.key"
+            chmod -R 777 /root # Allow Hysteria main program to access /root directory
+            if [[ -f /root/cert.crt && -f /root/private.key ]] && [[ -s /root/cert.crt && -s /root/private.key ]] && [[ -f /root/ca.log ]]; then
+                domain=$(cat /root/ca.log)
+                echo "EXISTING CERTIFICATE FOR DOMAIN: $domain DETECTED, APPLYING NOW"
+                hy_domain=$domain
+            else
+                # Rest of the code for option 2
+            fi
+            ;;
+        3)
+            read -p "ENTER PATH TO CRT FILE: " cert_path
+            echo "CRT FILE PATH: $cert_path"
+            read -p "ENTER PATH TO KEY FILE: " key_path
+            echo "KEY FILE PATH: $key_path"
+            read -p "ENTER CERTIFICATE DOMAIN: " domain
+            echo "CERTIFICATE DOMAIN: $domain"
             hy_domain=$domain
-        else
-            red "CERTIFICATE APPLICATION FAILED, EXITING SCRIPT" && exit
-        fi
-    fi
-    elif [[ $certInput == 3 ]]; then
-        read -p "ENTER PATH TO CRT FILE: " cert_path
-        echo "CRT FILE PATH: $cert_path"
-        read -p "ENTER PATH TO KEY FILE: " key_path
-        echo "KEY FILE PATH: $key_path"
-        read -p "ENTER CERTIFICATE DOMAIN: " domain
-        echo "CERTIFICATE DOMAIN: $domain"
-        hy_domain=$domain
-    else
-        read -rp "ENTER HYSTERIA SELF-SIGNED CERTIFICATE ADDRESS (REMOVE HTTPS://) [DEFAULT: www.bing.com]: " certsite
-        certsite=${certsite:-www.bing.com}
-        echo "HYSTERIA SELF-SIGNED CERTIFICATE ADDRESS: $certsite"
-    
-        WARPStatus=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-        if [[ $WARPStatus =~ on|plus ]]; then
-            wg-quick down wgcf >/dev/null 2>&1
-            systemctl stop warp-go >/dev/null 2>&1
-            realip
-            wg-quick up wgcf >/dev/null 2>&1
-            systemctl start warp-go >/dev/null 2>&1
-        else
-            realip
-        fi
-    
-        cert_path="/etc/hysteria/cert.crt"
-        key_path="/etc/hysteria/private.key"
-    
-        openssl ecparam -genkey -name prime256v1 -out $key_path
-        openssl req -new -x509 -days 36500 -key $key_path -out $cert_path -subj "/CN=$certsite"
-    
-        chmod 777 $cert_path
-        chmod 777 $key_path
-    
-        hy_domain="$certsite"
-        domain="$certsite"
-    fi
+            ;;
+        *)
+            echo "USING SELF-SIGNED CERTIFICATE FROM BING AS HYSTERIA 2 NODE CERTIFICATE"
+            cert_path="/etc/hysteria/cert.crt"
+            key_path="/etc/hysteria/private.key"
+            openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
+            openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
+            chmod 777 /etc/hysteria/cert.crt
+            chmod 777 /etc/hysteria/private.key
+            hy_domain="www.bing.com"
+            domain="www.bing.com"
+            ;;
+    esac
 }
 
 inst_port(){
