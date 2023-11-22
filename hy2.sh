@@ -443,10 +443,8 @@ showconf(){
 }
 
 update_core(){
-    wget -N https://raw.githubusercontent.com/Misaka-blog/hysteria-install/main/hy2/install_server.sh
-    bash install_server.sh
-    
-    rm -f install_server.sh
+    # ReInstall Hysteria 2
+    bash <(curl -fsSL https://get.hy2.sh/)
 }
 
 menu() {
