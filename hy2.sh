@@ -22,6 +22,19 @@ LIGHT_CYAN="\033[96m"
 WHITE="\033[97m"
 
 # 相应的函数
+
+red(){
+    echo -e "\033[31m\033[01m$1\033[0m"
+}
+
+green(){
+    echo -e "\033[32m\033[01m$1\033[0m"
+}
+
+yellow(){
+    echo -e "\033[33m\033[01m$1\033[0m"
+}
+
 blue(){
     echo -e "${BLUE}\033[01m$1${PLAIN}"
 }
@@ -32,14 +45,6 @@ purple(){
 
 cyan(){
     echo -e "${CYAN}\033[01m$1${PLAIN}"
-}
-
-light_gray(){
-    echo -e "${LIGHT_GRAY}\033[01m$1${PLAIN}"
-}
-
-dark_gray(){
-    echo -e "${DARK_GRAY}\033[01m$1${PLAIN}"
 }
 
 light_red(){
@@ -110,12 +115,12 @@ realip(){
 inst_cert(){
     green "SELECT CERTIFICATE APPLICATION METHOD:"
     echo ""
-    echo -e " ${GREEN}1.${PLAIN} SELF-SIGNED CERTIFICATE (OpenSSL) ${YELLOW}(DEFAULT)${PLAIN}"
-    echo -e " ${GREEN}2.${PLAIN} AUTOMATIC ACME SCRIPT APPLICATION"
+    echo -e " ${GREEN}1.${PLAIN} AUTOMATIC ACME SCRIPT APPLICATION"
+    echo -e " ${GREEN}2.${PLAIN} SELF-SIGNED CERTIFICATE (OpenSSL)"
     echo -e " ${GREEN}3.${PLAIN} CUSTOM CERTIFICATE PATH"
     echo ""
     read -rp "OPTION [1-3]: " certInput
-    if [[ $certInput == 2 ]]; then
+    if [[ $certInput == 1 ]]; then
         cert_path="/root/cert.crt"
         key_path="/root/private.key"
 
