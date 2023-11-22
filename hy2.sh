@@ -110,7 +110,7 @@ realip(){
 inst_cert(){
     green "SELECT CERTIFICATE APPLICATION METHOD:"
     echo ""
-    echo -e " ${GREEN}1.${PLAIN} SELF-SIGNED CERTIFICATE (BING) ${YELLOW}(DEFAULT)${PLAIN}"
+    echo -e " ${GREEN}1.${PLAIN} SELF-SIGNED CERTIFICATE (OpenSSL) ${YELLOW}(DEFAULT)${PLAIN}"
     echo -e " ${GREEN}2.${PLAIN} AUTOMATIC ACME SCRIPT APPLICATION"
     echo -e " ${GREEN}3.${PLAIN} CUSTOM CERTIFICATE PATH"
     echo ""
@@ -187,7 +187,7 @@ inst_cert(){
         yellow "CERTIFICATE DOMAIN: $domain"    
         hy_domain=$domain
     else
-        green "USING SELF-SIGNED CERTIFICATE (FROM BING)"
+        green "USING SELF-SIGNED CERTIFICATE (OpenSSL)"
 
         cert_path="/etc/hysteria/cert.crt"
         key_path="/etc/hysteria/private.key"
@@ -339,7 +339,7 @@ EOF
     echo $url > /root/hy/url.txt
     nohopurl="hysteria2://$auth_pwd@$last_ip:$port/?insecure=1&sni=$hy_domain"
     echo $nohopurl > /root/hy/url-nohop.txt
-    surge_format="TEST HY2 = hysteria2, $last_ip, $last_port, password=$auth_pwd, sni=$hy_domain, download-bandwidth=1000"
+    surge_format="TEST HY2 = hysteria2, $last_ip, $last_port, password=$auth_pwd, sni=$hy_domain, download-bandwidth=1000, skip-cert-verify=true"
     echo $surge_format > /root/hy/HY4SURGE.txt
 
     systemctl daemon-reload
