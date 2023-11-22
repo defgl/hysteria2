@@ -350,7 +350,7 @@ EOF
     else
         red "HYSTERIA 2 SERVICE FAILED TO START. RUN 'systemctl status hysteria-server' FOR STATUS. EXITING SCRIPT." && exit 1
     fi
-    red "私はあなたに別れを告げる旅に出た。"
+    light_purple "私はあなたに別れを告げる旅に出た。"
     green "HYSTERIA 2 PROXY SERVICE INSTALLED SUCCESSFULLY"
     yellow "HYSTERIA 2 NODE SHARE LINK (PATH: /root/hy/url.txt):"
     red "$(cat /root/hy/url.txt)"
@@ -382,8 +382,8 @@ stophysteria(){
 }
 
 hysteriaswitch(){
-    yellow "鳴神の少し響みて さし曇り"
-    yellow "雨も降らぬか 君を留めむ"
+    light_purple "鳴神の少し響みて さし曇り"
+    light_purple "雨も降らぬか 君を留めむ"
     echo ""
     echo -e " ${GREEN}1.${PLAIN} START"
     echo -e " ${GREEN}2.${PLAIN} SHUTDOWN"
