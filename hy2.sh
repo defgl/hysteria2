@@ -6,18 +6,70 @@ RED="\033[31m"
 GREEN="\033[32m"
 YELLOW="\033[33m"
 PLAIN="\033[0m"
+# 颜色定义
+BLUE="\033[34m"
+PURPLE="\033[35m"
+CYAN="\033[36m"
+LIGHT_GRAY="\033[37m"
+DARK_GRAY="\033[90m"
+LIGHT_RED="\033[91m"
+LIGHT_GREEN="\033[92m"
+LIGHT_YELLOW="\033[93m"
+LIGHT_BLUE="\033[94m"
+LIGHT_PURPLE="\033[95m"
+UNDERLINE_PURPLE="\e[4;35m"
+LIGHT_CYAN="\033[96m"
+WHITE="\033[97m"
 
-red(){
-    echo -e "\033[31m\033[01m$1\033[0m"
+# 相应的函数
+blue(){
+    echo -e "${BLUE}\033[01m$1${PLAIN}"
 }
 
-green(){
-    echo -e "\033[32m\033[01m$1\033[0m"
+purple(){
+    echo -e "${PURPLE}\033[01m$1${PLAIN}"
 }
 
-yellow(){
-    echo -e "\033[33m\033[01m$1\033[0m"
+cyan(){
+    echo -e "${CYAN}\033[01m$1${PLAIN}"
 }
+
+light_gray(){
+    echo -e "${LIGHT_GRAY}\033[01m$1${PLAIN}"
+}
+
+dark_gray(){
+    echo -e "${DARK_GRAY}\033[01m$1${PLAIN}"
+}
+
+light_red(){
+    echo -e "${LIGHT_RED}\033[01m$1${PLAIN}"
+}
+
+light_green(){
+    echo -e "${LIGHT_GREEN}\033[01m$1${PLAIN}"
+}
+
+light_yellow(){
+    echo -e "${LIGHT_YELLOW}\033[01m$1${PLAIN}"
+}
+
+light_blue(){
+    echo -e "${LIGHT_BLUE}\033[01m$1${PLAIN}"
+}
+
+light_purple(){
+    echo -e "${LIGHT_PURPLE}\033[01m$1${PLAIN}"
+}
+
+light_cyan(){
+    echo -e "${LIGHT_CYAN}\033[01m$1${PLAIN}"
+}
+
+white(){
+    echo -e "${WHITE}\033[01m$1${PLAIN}"
+}
+
 
 # Check for root privileges
 [[ $EUID -ne 0 ]] && red "PLEASE RUN AS ROOT" && exit 1
@@ -449,20 +501,20 @@ update_core(){
 
 menu() {
     clear
-    echo -e " ${LIGHT_RED}HYSTERIA 2${PLAIN}"
+    echo -e " ${LIGHT_PURPLE}HYSTERIA 2${PLAIN}"
     echo ""
-    echo -e " ${LIGHT_BLUE}AT WHAT SPEED MUST I LIVE, TO BE ABLE TO SEE YOU AGAIN?${PLAIN}"
-    echo " -------------"
-    echo -e " ${GREEN}1.${PLAIN} INSTALL"
-    echo -e " ${GREEN}2.${PLAIN} ${RED}UNINSTALL${PLAIN}"
-    echo " -------------"
-    echo -e " ${GREEN}3.${PLAIN} STOP, START, RESTART"
-    echo -e " ${GREEN}4.${PLAIN} MODIF CONFIG"
-    echo -e " ${GREEN}5.${PLAIN} DISPLAY CONFIG"
-    echo " -------------"
-    echo -e " ${GREEN}6.${PLAIN} UPDATE CORE"
-    echo " -------------"
-    echo -e " ${GREEN}0.${PLAIN} EXIT"
+    echo -e " ${UNDERLINE_PURPLE}AT WHAT SPEED MUST I LIVE, TO BE ABLE TO SEE YOU AGAIN?${PLAIN}"
+    echo " --------------------------------------------------------------------------------"
+    echo -e " ${LIGHT_GREEN}1.${PLAIN} INSTALL"
+    echo -e " ${LIGHT_GREEN}2.${PLAIN} ${RED}UNINSTALL${PLAIN}"
+    echo " --------------------------------------------------------------------------------"
+    echo -e " ${LIGHT_GRAY}3.${PLAIN} STOP, START, RESTART"
+    echo -e " ${LIGHT_GRAY}4.${PLAIN} MODIF CONFIG"
+    echo -e " ${LIGHT_GRAY}5.${PLAIN} DISPLAY CONFIG"
+    echo " --------------------------------------------------------------------------------"
+    echo -e " ${LIGHT_YELLOW}6.${PLAIN} UPDATE CORE"
+    echo " --------------------------------------------------------------------------------"
+    echo -e " ${PURPLE}0.${PLAIN} EXIT"
     echo ""
     read -rp "PLEASE ENTER AN OPTION [0-5]: " menuInput
     case $menuInput in
