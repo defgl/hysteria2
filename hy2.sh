@@ -361,8 +361,7 @@ changeport(){
     done
 
     sed -i "1s#$oldport#$port#g" /etc/hysteria/config.yaml
-    sed -i "1s#$oldport#$port#g" /root/hy/hy-client.yaml
-    sed -i "2s#$oldport#$port#g" /root/hy/hy-client.json
+    sed -i "1s#$oldport#$port#g" /root/hy/HY4SURGE.txt
 
     stophysteria && starthysteria
 
@@ -378,8 +377,7 @@ changepasswd(){
     [[ -z $passwd ]] && passwd=$(date +%s%N | md5sum | cut -c 1-8)
 
     sed -i "1s#$oldpasswd#$passwd#g" /etc/hysteria/config.yaml
-    sed -i "1s#$oldpasswd#$passwd#g" /root/hy/hy-client.yaml
-    sed -i "3s#$oldpasswd#$passwd#g" /root/hy/hy-client.json
+    sed -i "1s#$oldpasswd#$passwd#g" /root/hy/HY4SURGE.txt
 
     stophysteria && starthysteria
 
@@ -391,14 +389,13 @@ changepasswd(){
 change_cert(){
     old_cert=$(cat /etc/hysteria/config.yaml | grep cert | awk -F " " '{print $2}')
     old_key=$(cat /etc/hysteria/config.yaml | grep key | awk -F " " '{print $2}')
-    old_hydomain=$(cat /root/hy/hy-client.yaml | grep sni | awk '{print $2}')
+    old_hydomain=$(cat /root/hy/HY4SURGE.txt | grep sni | awk '{print $2}')
 
     inst_cert
 
     sed -i "s!$old_cert!$cert_path!g" /etc/hysteria/config.yaml
     sed -i "s!$old_key!$key_path!g" /etc/hysteria/config.yaml
-    sed -i "6s/$old_hydomain/$hy_domain/g" /root/hy/hy-client.yaml
-    sed -i "5s/$old_hydomain/$hy_domain/g" /root/hy/hy-client.json
+    sed -i "6s/$old_hydomain/$hy_domain/g" /root/hy/HY4SURGE.txt
 
     stophysteria && starthysteria
 
@@ -422,7 +419,7 @@ changeproxysite(){
 changeconf(){
     green "HYSTERIA 2 CONFIGURATION OPTIONS:"
     echo -e " ${GREEN}1.${PLAIN} CHANGE PORT"
-    echo -e " ${GREEN}2.${PLAIN} CHANGE PASSWORD
+    echo -e " ${GREEN}2.${PLAIN} CHANGE PASSWORD"
     echo -e " ${GREEN}3.${PLAIN} CHANGE CERTIFICATE"
     echo -e " ${GREEN}4.${PLAIN} CHANGE PROXY SITE"
     echo ""
@@ -454,10 +451,9 @@ update_core(){
 
 menu() {
     clear
-    echo -e " ${LIGHT_RED}HYSTERIA II${PLAIN}"
+    echo -e " ${LIGHT_RED}HYSTERIA 2${PLAIN}"
     echo ""
-    echo -e " ${LIGHT_BLUE}AT WHAT SPEED MUST I LIVE, TO BE ABLE TO SEE YOU AGAIN?${PLAIN}"                      
-
+    echo -e " ${LIGHT_BLUE}AT WHAT SPEED MUST I LIVE, TO BE ABLE TO SEE YOU AGAIN?${PLAIN}"
     echo " -------------"
     echo -e " ${GREEN}1.${PLAIN} INSTALL"
     echo -e " ${GREEN}2.${PLAIN} ${RED}UNINSTALL${PLAIN}"
