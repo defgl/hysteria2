@@ -1,537 +1,540 @@
-#!/bin/bash
+#!/BIN/BASH
 
-export LANG=en_US.UTF-8
+EXPORT lang=EN_us.utf-8
 
-RED="\033[31m"
-GREEN="\033[32m"
-YELLOW="\033[33m"
-PLAIN="\033[0m"
+red="\033[31M"
+green="\033[32M"
+yellow="\033[33M"
+plain="\033[0M"
 # 颜色定义
-BLUE="\033[34m"
-PURPLE="\033[35m"
-CYAN="\033[36m"
-LIGHT_GRAY="\033[37m"
-DARK_GRAY="\033[90m"
-LIGHT_RED="\033[91m"
-LIGHT_GREEN="\033[92m"
-LIGHT_YELLOW="\033[93m"
-LIGHT_BLUE="\033[94m"
-LIGHT_PURPLE="\033[95m"
-UNDERLINE_PURPLE="\e[4;35m"
-LIGHT_CYAN="\033[96m"
-WHITE="\033[97m"
+blue="\033[34M"
+purple="\033[35M"
+cyan="\033[36M"
+light_gray="\033[37M"
+dark_gray="\033[90M"
+light_red="\033[91M"
+light_green="\033[92M"
+light_yellow="\033[93M"
+light_blue="\033[94M"
+light_purple="\033[95M"
+underline_purple="\E[4;35M"
+light_cyan="\033[96M"
+white="\033[97M"
 
 # 相应的函数
 
-red(){
-    echo -e "\033[31m\033[01m$1\033[0m"
+RED(){
+    ECHO -E "\033[31M\033[01M$1\033[0M"
 }
 
-green(){
-    echo -e "\033[32m\033[01m$1\033[0m"
+GREEN(){
+    ECHO -E "\033[32M\033[01M$1\033[0M"
 }
 
-yellow(){
-    echo -e "\033[33m\033[01m$1\033[0m"
+YELLOW(){
+    ECHO -E "\033[33M\033[01M$1\033[0M"
 }
 
-blue(){
-    echo -e "${BLUE}\033[01m$1${PLAIN}"
+BLUE(){
+    ECHO -E "${blue}\033[01M$1${plain}"
 }
 
-purple(){
-    echo -e "${PURPLE}\033[01m$1${PLAIN}"
+PURPLE(){
+    ECHO -E "${purple}\033[01M$1${plain}"
 }
 
-cyan(){
-    echo -e "${CYAN}\033[01m$1${PLAIN}"
+CYAN(){
+    ECHO -E "${cyan}\033[01M$1${plain}"
 }
 
-light_red(){
-    echo -e "${LIGHT_RED}\033[01m$1${PLAIN}"
+LIGHT_RED(){
+    ECHO -E "${light_red}\033[01M$1${plain}"
 }
 
-light_green(){
-    echo -e "${LIGHT_GREEN}\033[01m$1${PLAIN}"
+LIGHT_GREEN(){
+    ECHO -E "${light_green}\033[01M$1${plain}"
 }
 
-light_yellow(){
-    echo -e "${LIGHT_YELLOW}\033[01m$1${PLAIN}"
+LIGHT_YELLOW(){
+    ECHO -E "${light_yellow}\033[01M$1${plain}"
 }
 
-light_blue(){
-    echo -e "${LIGHT_BLUE}\033[01m$1${PLAIN}"
+LIGHT_BLUE(){
+    ECHO -E "${light_blue}\033[01M$1${plain}"
 }
 
-light_purple(){
-    echo -e "${LIGHT_PURPLE}\033[01m$1${PLAIN}"
+LIGHT_PURPLE(){
+    ECHO -E "${light_purple}\033[01M$1${plain}"
 }
 
-light_cyan(){
-    echo -e "${LIGHT_CYAN}\033[01m$1${PLAIN}"
+LIGHT_CYAN(){
+    ECHO -E "${light_cyan}\033[01M$1${plain}"
 }
 
-white(){
-    echo -e "${WHITE}\033[01m$1${PLAIN}"
+WHITE(){
+    ECHO -E "${white}\033[01M$1${plain}"
 }
 
 
-# Check for root privileges
-[[ $EUID -ne 0 ]] && red "PLEASE RUN AS ROOT" && exit 1
+# cHECK FOR ROOT PRIVILEGES
+[[ $euid -NE 0 ]] && RED "please run as root" && EXIT 1
 
-# Simplify OS detection
-OS_NAME=$(grep -Eo "(debian|ubuntu|centos|fedora|red hat|oracle linux|alma|rocky|amazon linux)" /etc/os-release | tr '[:upper:]' '[:lower:]' | head -n 1)
+# sIMPLIFY os DETECTION
+os_name=$(GREP -eO "(DEBIAN|UBUNTU|CENTOS|FEDORA|RED HAT|ORACLE LINUX|ALMA|ROCKY|AMAZON LINUX)" /ETC/OS-RELEASE | TR '[:UPPER:]' '[:LOWER:]' | HEAD -N 1)
 
-# Define package management commands based on OS
-case "$OS_NAME" in
-    debian|ubuntu)
-        PACKAGE_MANAGER_UPDATE="apt-get update"
-        PACKAGE_MANAGER_INSTALL="apt-get install -y"
+# dEFINE PACKAGE MANAGEMENT COMMANDS BASED ON os
+CASE "$os_name" IN
+    DEBIAN|UBUNTU)
+        package_manager_update="APT-GET UPDATE"
+        package_manager_install="APT-GET INSTALL -Y"
         ;;
-    centos|red\ hat|oracle\ linux|alma|rocky)
-        PACKAGE_MANAGER_UPDATE="yum update -y"
-        PACKAGE_MANAGER_INSTALL="yum install -y"
+    CENTOS|RED\ HAT|ORACLE\ LINUX|ALMA|ROCKY)
+        package_manager_update="YUM UPDATE -Y"
+        package_manager_install="YUM INSTALL -Y"
         ;;
-    fedora)
-        PACKAGE_MANAGER_UPDATE="dnf update -y"
-        PACKAGE_MANAGER_INSTALL="dnf install -y"
+    FEDORA)
+        package_manager_update="DNF UPDATE -Y"
+        package_manager_install="DNF INSTALL -Y"
         ;;
     *)
-        red "UNSUPPORTED OS"
-        exit 1
+        RED "unsupported os"
+        EXIT 1
         ;;
-esac
+ESAC
 
-# Update and install required packages
-$PACKAGE_MANAGER_UPDATE
-$PACKAGE_MANAGER_INSTALL curl wget sudo qrencode procps iptables-persistent netfilter-persistent
+# uPDATE AND INSTALL REQUIRED PACKAGES
+$package_manager_update
+$package_manager_install CURL WGET SUDO QRENCODE PROCPS IPTABLES-PERSISTENT NETFILTER-PERSISTENT
 
-# Additional logic if needed...
+# aDDITIONAL LOGIC IF NEEDED...
 
-realip(){
-    ip=$(curl -s4m8 ip.sb -k) || ip=$(curl -s6m8 ip.sb -k)
+REALIP(){
+    IP=$(CURL -S4M8 IP.SB -K) || IP=$(CURL -S6M8 IP.SB -K)
 }
 
-inst_cert(){
-    green "SELECT CERTIFICATE APPLICATION METHOD:"
-    echo ""
-    echo -e " ${GREEN}1.${PLAIN} AUTOMATIC ACME SCRIPT APPLICATION"
-    echo -e " ${GREEN}2.${PLAIN} SELF-SIGNED CERTIFICATE (OpenSSL)"
-    echo -e " ${GREEN}3.${PLAIN} CUSTOM CERTIFICATE PATH"
-    echo ""
-    read -rp "OPTION [1-3]: " certInput
-    if [[ $certInput == 1 ]]; then
-        cert_path="/root/cert.crt"
-        key_path="/root/private.key"
+INST_CERT(){
+    GREEN "请选择证书申请方式:"
+    ECHO ""
+    ECHO -E " ${green}1.${plain} 采用 acme 申请证书"
+    ECHO -E " ${green}2.${plain} 采用oPENssl 的伪bING证书"
+    ECHO -E " ${green}3.${plain} 自定义证书"
+    ECHO ""
+    READ -RP "oPTION [1-3]: " CERTiNPUT
+    IF [[ $CERTiNPUT == 1 ]]; THEN
+        CERT_PATH="/ROOT/CERT.CRT"
+        KEY_PATH="/ROOT/PRIVATE.KEY"
 
-        chmod -R 777 /root # 让 Hysteria 主程序访问到 /root 目录
+        CHMOD -r 777 /ROOT # 让 hYSTERIA 主程序访问到 /ROOT 目录
 
-        if [[ -f /root/cert.crt && -f /root/private.key ]] && [[ -s /root/cert.crt && -s /root/private.key ]] && [[ -f /root/ca.log ]]; then
-            domain=$(cat /root/ca.log)
-            green "EXISTING CERTIFICATE DETECTED FOR DOMAIN: $domain, APPLYING"
-            hy_domain=$domain
-        else
-            WARPv4Status=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-            WARPv6Status=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-            if [[ $WARPv4Status =~ on|plus ]] || [[ $WARPv6Status =~ on|plus ]]; then
-                wg-quick down wgcf >/dev/null 2>&1
-                systemctl stop warp-go >/dev/null 2>&1
-                realip
-                wg-quick up wgcf >/dev/null 2>&1
-                systemctl start warp-go >/dev/null 2>&1
-            else
-                realip
-            fi
+        IF [[ -F /ROOT/CERT.CRT && -F /ROOT/PRIVATE.KEY ]] && [[ -S /ROOT/CERT.CRT && -S /ROOT/PRIVATE.KEY ]] && [[ -F /ROOT/CA.LOG ]]; THEN
+            DOMAIN=$(CAT /ROOT/CA.LOG)
+            GREEN "existing certificate detected for domain: $DOMAIN, applying"
+            HY_DOMAIN=$DOMAIN
+        ELSE
+            warpV4sTATUS=$(CURL -S4M8 HTTPS://WWW.CLOUDFLARE.COM/CDN-CGI/TRACE -K | GREP WARP | CUT -D= -F2)
+            warpV6sTATUS=$(CURL -S6M8 HTTPS://WWW.CLOUDFLARE.COM/CDN-CGI/TRACE -K | GREP WARP | CUT -D= -F2)
+            IF [[ $warpV4sTATUS =~ ON|PLUS ]] || [[ $warpV6sTATUS =~ ON|PLUS ]]; THEN
+                WG-QUICK DOWN WGCF >/DEV/NULL 2>&1
+                SYSTEMCTL STOP WARP-GO >/DEV/NULL 2>&1
+                REALIP
+                WG-QUICK UP WGCF >/DEV/NULL 2>&1
+                SYSTEMCTL START WARP-GO >/DEV/NULL 2>&1
+            ELSE
+                REALIP
+            FI
             
-            read -p "DOMAIN FOR APPLYING CERTIFICATE:" domain
-            [[ -z $domain ]] && red "INVALID INPUT, EXITING SCRIPT" && exit 1
-            green "CONFIRMED:$domain" && sleep 1
-            domainIP=$(curl -sm8 ipget.net/?ip="${domain}")
-            if [[ $domainIP == $ip ]]; then
-                ${PACKAGE_INSTALL[int]} curl wget sudo socat openssl
-                if [[ $SYSTEM == "CentOS" ]]; then
-                    ${PACKAGE_INSTALL[int]} cronie
-                    systemctl start crond
-                    systemctl enable crond
-                else
-                    ${PACKAGE_INSTALL[int]} cron
-                    systemctl start cron
-                    systemctl enable cron
-                fi
-                curl https://get.acme.sh | sh -s email=$(date +%s%N | md5sum | cut -c 1-16)@gmail.com
-                source ~/.bashrc
-                bash ~/.acme.sh/acme.sh --upgrade --auto-upgrade
-                bash ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
-                if [[ -n $(echo $ip | grep ":") ]]; then
-                    bash ~/.acme.sh/acme.sh --issue -d ${domain} --standalone -k ec-256 --listen-v6 --insecure
-                else
-                    bash ~/.acme.sh/acme.sh --issue -d ${domain} --standalone -k ec-256 --insecure
-                fi
-                bash ~/.acme.sh/acme.sh --install-cert -d ${domain} --key-file /root/private.key --fullchain-file /root/cert.crt --ecc
-                if [[ -f /root/cert.crt && -f /root/private.key ]] && [[ -s /root/cert.crt && -s /root/private.key ]]; then
-                    echo $domain > /root/ca.log
-                    sed -i '/--cron/d' /etc/crontab >/dev/null 2>&1
-                    echo "0 0 * * * root bash /root/.acme.sh/acme.sh --cron -f >/dev/null 2>&1" >> /etc/crontab
-                    green "CERTIFICATE APPLICATION SUCCESSFUL! CERTIFICATE (cert.crt) AND PRIVATE KEY (private.key) SAVED TO /root DIRECTORY"
-                    yellow "CERTIFICATE CRT FILE PATH: /root/cert.crt"
-                    yellow "PRIVATE KEY FILE PATH: /root/private.key"
-                    hy_domain=$domain
-                fi
+            READ -P "domain for applying certificate:" DOMAIN
+            [[ -Z $DOMAIN ]] && RED "invalid input, exiting script" && EXIT 1
+            GREEN "cONFIRMED:$DOMAIN" && SLEEP 1
+            DOMAINip=$(CURL -SM8 IPGET.NET/?IP="${DOMAIN}")
+            IF [[ $DOMAINip == $IP ]]; THEN
+                ${package_install[INT]} CURL WGET SUDO SOCAT OPENSSL
+                IF [[ $system == "cENTos" ]]; THEN
+                    ${package_install[INT]} CRONIE
+                    SYSTEMCTL START CROND
+                    SYSTEMCTL ENABLE CROND
+                ELSE
+                    ${package_install[INT]} CRON
+                    SYSTEMCTL START CRON
+                    SYSTEMCTL ENABLE CRON
+                FI
+                CURL HTTPS://GET.ACME.SH | SH -S EMAIL=$(DATE +%S%n | MD5SUM | CUT -C 1-16)@GMAIL.COM
+                SOURCE ~/.BASHRC
+                BASH ~/.ACME.SH/ACME.SH --UPGRADE --AUTO-UPGRADE
+                BASH ~/.ACME.SH/ACME.SH --SET-DEFAULT-CA --SERVER LETSENCRYPT
+                IF [[ -N $(ECHO $IP | GREP ":") ]]; THEN
+                    BASH ~/.ACME.SH/ACME.SH --ISSUE -D ${DOMAIN} --STANDALONE -K EC-256 --LISTEN-V6 --INSECURE
+                ELSE
+                    BASH ~/.ACME.SH/ACME.SH --ISSUE -D ${DOMAIN} --STANDALONE -K EC-256 --INSECURE
+                FI
+                BASH ~/.ACME.SH/ACME.SH --INSTALL-CERT -D ${DOMAIN} --KEY-FILE /ROOT/PRIVATE.KEY --FULLCHAIN-FILE /ROOT/CERT.CRT --ECC
+                IF [[ -F /ROOT/CERT.CRT && -F /ROOT/PRIVATE.KEY ]] && [[ -S /ROOT/CERT.CRT && -S /ROOT/PRIVATE.KEY ]]; THEN
+                    ECHO $DOMAIN > /ROOT/CA.LOG
+                    SED -I '/--CRON/D' /ETC/CRONTAB >/DEV/NULL 2>&1
+                    ECHO "0 0 * * * ROOT BASH /ROOT/.ACME.SH/ACME.SH --CRON -F >/DEV/NULL 2>&1" >> /ETC/CRONTAB
+                    GREEN "certificate application successful! certificate (CERT.CRT) and private key (PRIVATE.KEY) saved to /ROOT directory"
+                    YELLOW "certificate crt file path: /ROOT/CERT.CRT"
+                    YELLOW "private key file path: /ROOT/PRIVATE.KEY"
+                    HY_DOMAIN=$DOMAIN
+                FI
 
-            else
-                red "DOMAIN NAME PROVIDED CANNOT BE RESOLVED"
-                exit 1
-            fi
-        fi
-    elif [[ $certInput == 3 ]]; then
-        read -p "ENTER PATH TO PUBLIC KEY FILE (CRT): " cert_path
-        yellow "PUBLIC KEY FILE (CRT) PATH: $certpath "
-        read -p "ENTER PATH TO PRIVATE KEY FILE (KEY): " key_path
-        yellow "PRIVATE KEY FILE (KEY) PATH: $keypath "
-        read -p "ENTER CERTIFICATE DOMAIN: " domain
-        yellow "CERTIFICATE DOMAIN: $domain"    
-        hy_domain=$domain
-    else
-        green "USING SELF-SIGNED CERTIFICATE (OpenSSL)"
+            ELSE
+                RED "domain name provided cannot be resolved"
+                EXIT 1
+            FI
+        FI
+    ELIF [[ $CERTiNPUT == 3 ]]; THEN
+        READ -P "enter path to public key file (crt): " CERT_PATH
+        YELLOW "public key file (crt) path: $CERTPATH "
+        READ -P "enter path to private key file (key): " KEY_PATH
+        YELLOW "private key file (key) path: $KEYPATH "
+        READ -P "enter certificate domain: " DOMAIN
+        YELLOW "certificate domain: $DOMAIN"    
+        HY_DOMAIN=$DOMAIN
+    ELSE
+        GREEN "using self-signed certificate (oPENssl)"
 
-        cert_path="/etc/hysteria/cert.crt"
-        key_path="/etc/hysteria/private.key"
-        openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
-        openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
-        chmod 777 /etc/hysteria/cert.crt
-        chmod 777 /etc/hysteria/private.key
-        hy_domain="www.bing.com"
-        domain="www.bing.com"
-    fi
+        CERT_PATH="/ETC/HYSTERIA/CERT.CRT"
+        KEY_PATH="/ETC/HYSTERIA/PRIVATE.KEY"
+        OPENSSL ECPARAM -GENKEY -NAME PRIME256V1 -OUT /ETC/HYSTERIA/PRIVATE.KEY
+        OPENSSL REQ -NEW -X509 -DAYS 36500 -KEY /ETC/HYSTERIA/PRIVATE.KEY -OUT /ETC/HYSTERIA/CERT.CRT -SUBJ "/cn=WWW.BING.COM"
+        CHMOD 777 /ETC/HYSTERIA/CERT.CRT
+        CHMOD 777 /ETC/HYSTERIA/PRIVATE.KEY
+        HY_DOMAIN="WWW.BING.COM"
+        DOMAIN="WWW.BING.COM"
+    FI
 }
 
-inst_port(){
-    iptables -t nat -F PREROUTING >/dev/null 2>&1
+INST_PORT(){
+    IPTABLES -T NAT -f prerouting >/DEV/NULL 2>&1
 
-    read -p "SET HYSTERIA 2 PORT [1-65535] (DEFAULT FOR RANDOM): " port
-    [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
-    until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
-        if [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; then
-            echo -e "${RED} PORT $port ${PLAIN} IS ALREADY IN USED. PLEASE RETRY A DIFFERENT PORT"
-            read -p "SET HYSTERIA 2 PORT [1-65535] (DEFAULT FOR RANDOM): " port
-            [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
-        fi
-    done
+    READ -P "set hysteria 2 pORT [1-65535] (default for random): " PORT
+    [[ -Z $PORT ]] && PORT=$(SHUF -I 2000-65535 -N 1)
+    UNTIL [[ -Z $(SS -TUNLP | GREP -W UDP | AWK '{PRINT $5}' | SED 'S/.*://G' | GREP -W "$PORT") ]]; DO
+        IF [[ -N $(SS -TUNLP | GREP -W UDP | AWK '{PRINT $5}' | SED 'S/.*://G' | GREP -W "$PORT") ]]; THEN
+            ECHO -E "${red} pORT $PORT ${plain} is already in used. please retry a different pORT"
+            READ -P "set hysteria 2 pORT [1-65535] (default for random): " PORT
+            [[ -Z $PORT ]] && PORT=$(SHUF -I 2000-65535 -N 1)
+        FI
+    DONE
 
 
-    yellow "PORT CONFIRMED:$port"
-    inst_jump
+    YELLOW "cONFIRMED:$PORT"
+    INST_JUMP
 }
 
-inst_jump(){
-    green "HYSTERIA 2 PORT USAGE MODE:"
-    echo ""
-    echo -e " ${GREEN}1.${PLAIN} SINGLE-PORT ${YELLOW}(DEFAULT)${PLAIN}"
-    echo -e " ${GREEN}2.${PLAIN} PORT HOPPING"
-    echo ""
-    read -rp "OPTION [1-2]: " jumpInput
-    if [[ $jumpInput == 2 ]]; then
-        read -p "SET START port FOR RANGE (RECOMMENDED 10000-65535): " firstport
-        read -p "SET END PORT FOR RANGE (MUST BE GREATER THAN LAST INPUT): " endport
-        if [[ $firstport -ge $endport ]]; then
-            until [[ $firstport -le $endport ]]; do
-                if [[ $firstport -ge $endport ]]; then
-                    red "START PORT MUST BE LESS THAN END PORT. PLEASE RE-ENTER START AND END PORTS."
+INST_JUMP(){
+    GREEN "hysteria 2 pORT uSAGE mODE:"
+    ECHO ""
+    ECHO -E " ${green}1.${plain} single-pORT ${yellow}(default)${plain}"
+    ECHO -E " ${green}2.${plain} pORT hopping"
+    ECHO ""
+    READ -RP "oPTION [1-2]: " JUMPiNPUT
+    IF [[ $JUMPiNPUT == 2 ]]; THEN
+        READ -P "sET start pORT FOR RANGE (RECOMMENDED 10000-65535): " FIRSTPORT
+        READ -P "sET end pORT FOR RANGE (MUST BE GREATER THAN LAST INPUT): " ENDPORT
+        IF [[ $FIRSTPORT -GE $ENDPORT ]]; THEN
+            UNTIL [[ $FIRSTPORT -LE $ENDPORT ]]; DO
+                IF [[ $FIRSTPORT -GE $ENDPORT ]]; THEN
+                    red "start pORT MUST BE LESS THAN END PORT. pLEASE CHOOSE DIFFERENT START AND END PORTS."
                     read -p "SET START PORT FOR RANGE (RECOMMENDED BETWEEN 10000-65535): " firstport
-                    read -p "SET END PORT FOR RANGE (RECOMMENDED BETWEEN 10000-65535, must be greater than start port): " endport
+                    read -p "SET END PORT FOR RANGE (RECOMMENDED BETWEEN 10000-65535, must be greater than start pORT): " endport
 
-                fi
-            done
-        fi
-        iptables -t nat -A PREROUTING -p udp --dport $firstport:$endport  -j DNAT --to-destination :$port
-        ip6tables -t nat -A PREROUTING -p udp --dport $firstport:$endport  -j DNAT --to-destination :$port
-        netfilter-persistent save >/dev/null 2>&1
-    else
-        red "CONTINUING IN SINGLE PORT MODE"
-    fi
+                FI
+            DONE
+        FI
+        IPTABLES -T NAT -a prerouting -P UDP --DPORT $FIRSTPORT:$ENDPORT  -J dnat --TO-DESTINATION :$PORT
+        IP6TABLES -T NAT -a prerouting -P UDP --DPORT $FIRSTPORT:$ENDPORT  -J dnat --TO-DESTINATION :$PORT
+        NETFILTER-PERSISTENT SAVE >/DEV/NULL 2>&1
+    ELSE
+        RED "cONTINUING IN SINGLE PORT MODE"
+    FI
 }
 
-inst_pwd() {
-    read -p "Set PASSWORD (PRESS ENTER FOR RANDOM): " auth_pwd
-    [[ -z $auth_pwd ]] && auth_pwd=$(date +%s%N | md5sum | cut -c 1-8)
-    yellow "CONFIRMED: $auth_pwd"
-}
-
-
-inst_site() {
-    read -rp "ENTER MASQUERADE SITE URL (OMIT https://) [DEFAULT FOR SEGA MAIMAI SITE]: " proxysite
-    [[ -z $proxysite ]] && proxysite="maimai.sega.jp"
-    yellow "CONFIRMED: $proxysite"
+INST_PWD() {
+    READ -P "sET PASSWORD (DEFAULT FOR RANDOM): " AUTH_PWD
+    [[ -Z $AUTH_PWD ]] && AUTH_PWD=$(DATE +%S%n | MD5SUM | CUT -C 1-8)
+    YELLOW "cONFIRMED: $AUTH_PWD"
 }
 
 
-insthysteria(){
-    warpv6=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-    warpv4=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-    if [[ $warpv4 =~ on|plus || $warpv6 =~ on|plus ]]; then
-        wg-quick down wgcf >/dev/null 2>&1
-        systemctl stop warp-go >/dev/null 2>&1
-        realip
-        systemctl start warp-go >/dev/null 2>&1
-        wg-quick up wgcf >/dev/null 2>&1
-    else
-        realip
-    fi
+INST_SITE() {
+    READ -RP "enter masquerade site url (omit HTTPS://) [default for sega maimai site]: " PROXYSITE
+    [[ -Z $PROXYSITE ]] && PROXYSITE="MAIMAI.SEGA.JP"
+    YELLOW "cONFIRMED: $PROXYSITE"
+}
 
-    if [[ ! ${SYSTEM} == "CentOS" ]]; then
-        ${PACKAGE_UPDATE}
-    fi
-    ${PACKAGE_INSTALL} curl wget sudo qrencode procps iptables-persistent netfilter-persistent
 
-    # Install Hysteria 2
-    bash <(curl -fsSL https://get.hy2.sh/)
+INSTHYSTERIA(){
+    
+    IF NETSTAT -TULN | GREP -Q ":80 "; THEN
+        ECHO "pORT 80 IS ALREADY IN USE. eXITING..."
+        EXIT 1
+    FI
 
-    if [[ -f "/usr/local/bin/hysteria" ]]; then
-        green "INSTALLED SUCCESSFULLY!"
-    else
-        red "INSTALLED FAILED!"
-        exit 1
-    fi
+    WARPV6=$(CURL -S6M8 HTTPS://WWW.CLOUDFLARE.COM/CDN-CGI/TRACE -K | GREP WARP | CUT -D= -F2)
+    WARPV4=$(CURL -S4M8 HTTPS://WWW.CLOUDFLARE.COM/CDN-CGI/TRACE -K | GREP WARP | CUT -D= -F2)
+    IF [[ $WARPV4 =~ ON|PLUS || $WARPV6 =~ ON|PLUS ]]; THEN
+        WG-QUICK DOWN WGCF >/DEV/NULL 2>&1
+        SYSTEMCTL STOP WARP-GO >/DEV/NULL 2>&1
+        REALIP
+        SYSTEMCTL START WARP-GO >/DEV/NULL 2>&1
+        WG-QUICK UP WGCF >/DEV/NULL 2>&1
+    ELSE
+        REALIP
+    FI
 
-    # 询问用户 Hysteria 配置
-    inst_cert
-    inst_port
-    inst_pwd
-    inst_site
+    IF [[ ! ${system} == "cENTos" ]]; THEN
+        ${package_update}
+    FI
+    ${package_install} CURL WGET SUDO QRENCODE PROCPS IPTABLES-PERSISTENT NETFILTER-PERSISTENT
 
-    # 设置 Hysteria 配置文件
-    cat << EOF > /etc/hysteria/config.yaml
-listen: :$port
+    # iNSTALL hYSTERIA 2
+    BASH <(CURL -FSsl HTTPS://GET.HY2.SH/)
 
-tls:
-  cert: $cert_path
-  key: $key_path
+    IF [[ -F "/USR/LOCAL/BIN/HYSTERIA" ]]; THEN
+        GREEN "installed successfully!"
+    ELSE
+        RED "installed failed!"
+        EXIT 1
+    FI
 
-quic:
-  initStreamReceiveWindow: 16777216
-  maxStreamReceiveWindow: 16777216
-  initConnReceiveWindow: 33554432
-  maxConnReceiveWindow: 33554432
+    # 询问用户 hYSTERIA 配置
+    INST_CERT
+    INST_PORT
+    INST_PWD
+    INST_SITE
 
-auth:
-  type: password
-  password: $auth_pwd
+    # 设置 hYSTERIA 配置文件
+    CAT << eof > /ETC/HYSTERIA/CONFIG.YAML
+LISTEN: :$PORT
 
-masquerade:
-  type: proxy
-  proxy:
-    url: https://$proxysite
-    rewriteHost: true
-EOF
+TLS:
+  CERT: $CERT_PATH
+  KEY: $KEY_PATH
+
+QUIC:
+  INITsTREAMrECEIVEwINDOW: 16777216
+  MAXsTREAMrECEIVEwINDOW: 16777216
+  INITcONNrECEIVEwINDOW: 33554432
+  MAXcONNrECEIVEwINDOW: 33554432
+
+AUTH:
+  TYPE: PASSWORD
+  PASSWORD: $AUTH_PWD
+
+MASQUERADE:
+  TYPE: PROXY
+  PROXY:
+    URL: HTTPS://$PROXYSITE
+    REWRITEhOST: TRUE
+eof
 
     # 确定最终入站端口范围
-    if [[ -n $firstport ]]; then
-        last_port="$port,$firstport-$endport"
-    else
-        last_port=$port
-    fi
+    IF [[ -N $FIRSTPORT ]]; THEN
+        LAST_PORT="$PORT,$FIRSTPORT-$ENDPORT"
+    ELSE
+        LAST_PORT=$PORT
+    FI
 
-    # 给 IPv6 地址加中括号
-    if [[ -n $(echo $ip | grep ":") ]]; then
-        last_ip="[$ip]"
-    else
-        last_ip=$ip
-    fi
+    # 给 ipV6 地址加中括号
+    IF [[ -N $(ECHO $IP | GREP ":") ]]; THEN
+        LAST_IP="[$IP]"
+    ELSE
+        LAST_IP=$IP
+    FI
 
-    mkdir /root/hy
+    MKDIR /ROOT/HY
 
-    url="hysteria2://$auth_pwd@$last_ip:$last_port/?insecure=1&sni=$hy_domain"
-    echo $url > /root/hy/url.txt
-    nohopurl="hysteria2://$auth_pwd@$last_ip:$port/?insecure=1&sni=$hy_domain"
-    echo $nohopurl > /root/hy/url-nohop.txt
-    surge_format="TEST HY2 = hysteria2, $last_ip, $last_port, password=$auth_pwd, sni=$hy_domain, download-bandwidth=1000, skip-cert-verify=true"
-    echo $surge_format > /root/hy/HY4SURGE.txt
+    URL="HYSTERIA2://$AUTH_PWD@$LAST_IP:$LAST_PORT/?INSECURE=1&SNI=$HY_DOMAIN"
+    ECHO $URL > /ROOT/HY/URL.TXT
+    NOHOPURL="HYSTERIA2://$AUTH_PWD@$LAST_IP:$PORT/?INSECURE=1&SNI=$HY_DOMAIN"
+    ECHO $NOHOPURL > /ROOT/HY/URL-NOHOP.TXT
+    SURGE_FORMAT="test hy2 = HYSTERIA2, $LAST_IP, $LAST_PORT, PASSWORD=$AUTH_PWD, SNI=$HY_DOMAIN, DOWNLOAD-BANDWIDTH=1000, SKIP-CERT-VERIFY=TRUE"
+    ECHO $SURGE_FORMAT > /ROOT/HY/hy4surge.TXT
 
-    systemctl daemon-reload
-    systemctl enable hysteria-server
-    systemctl start hysteria-server
-    if [[ -n $(systemctl status hysteria-server 2>/dev/null | grep -w active) && -f '/etc/hysteria/config.yaml' ]]; then
-        green "HYSTERIA 2 STARTED SUCCESSFULLY"
-    else
-        red "HYSTERIA 2 SERVICE FAILED TO START. RUN 'systemctl status hysteria-server' FOR STATUS. EXITING SCRIPT." && exit 1
-    fi
-    light_purple "私はあなたに別れを告げる旅に出た。"
-    green "HYSTERIA 2 PROXY SERVICE INSTALLED SUCCESSFULLY"
-    yellow "HYSTERIA 2 NODE SHARE LINK (PATH: /root/hy/url.txt):"
-    red "$(cat /root/hy/url.txt)"
-    yellow "HYSTERIA 2 NODE SINGLE PORT SHARE LINK (PATH: /root/hy/url-nohop.txt):"
-    red "$(cat /root/hy/url-nohop.txt)"
-    yellow "HYSTERIA 2 NODE INFO FOR SURGE (PATH: /root/hy/HY4SURGE.txt):"
-    red "$(cat /root/hy/HY4SURGE.txt)"
+    SYSTEMCTL DAEMON-RELOAD
+    SYSTEMCTL ENABLE HYSTERIA-SERVER
+    SYSTEMCTL START HYSTERIA-SERVER
+    IF [[ -N $(SYSTEMCTL STATUS HYSTERIA-SERVER 2>/DEV/NULL | GREP -W ACTIVE) && -F '/ETC/HYSTERIA/CONFIG.YAML' ]]; THEN
+        GREEN "hysteria 2 STARTED SUCCESSFULLY"
+    ELSE
+        RED "hysteria 2 START FAILED, PLEASE CHECK THE LOG FOR DETAILS"
+        RED "eXITING NOW." && EXIT 1
+    FI
+    LIGHT_PURPLE "私はあなたに別れを告げる旅に出た。"
+    GREEN "hysteria 2 proxy service installed successfully"
+    YELLOW "share link generated:"
+    RED "$(CAT /ROOT/HY/URL.TXT)"
+    YELLOW "Hysteria 2 node single pORT share link (path: /ROOT/HY/URL-NOHOP.TXT):"
+    RED "$(CAT /ROOT/HY/URL-NOHOP.TXT)"
+    YELLOW "hysteria 2 node info for surge (path: /ROOT/HY/hy4surge.TXT):"
+    RED "$(CAT /ROOT/HY/hy4surge.TXT)"
 }
 
-unsthysteria(){
-    systemctl stop hysteria-server.service >/dev/null 2>&1
-    systemctl disable hysteria-server.service >/dev/null 2>&1
-    rm -f /lib/systemd/system/hysteria-server.service /lib/systemd/system/hysteria-server@.service
-    rm -rf /usr/local/bin/hysteria /etc/hysteria /root/hy /root/hysteria.sh
-    iptables -t nat -F PREROUTING >/dev/null 2>&1
-    netfilter-persistent save >/dev/null 2>&1
+UNSTHYSTERIA(){
+    SYSTEMCTL STOP HYSTERIA-SERVER.SERVICE >/DEV/NULL 2>&1
+    SYSTEMCTL DISABLE HYSTERIA-SERVER.SERVICE >/DEV/NULL 2>&1
+    RM -F /LIB/SYSTEMD/SYSTEM/HYSTERIA-SERVER.SERVICE /LIB/SYSTEMD/SYSTEM/HYSTERIA-SERVER@.SERVICE
+    RM -RF /USR/LOCAL/BIN/HYSTERIA /ETC/HYSTERIA /ROOT/HY /ROOT/HYSTERIA.SH
+    IPTABLES -T NAT -f prerouting >/DEV/NULL 2>&1
+    NETFILTER-PERSISTENT SAVE >/DEV/NULL 2>&1
 
-    green "UNINSTALLED SCUEESSFULLY"
+    GREEN "uNINSTALLED SUCCESSFULLY!"
 }
 
-starthysteria(){
-    systemctl start hysteria-server
-    systemctl enable hysteria-server >/dev/null 2>&1
+STARTHYSTERIA(){
+    SYSTEMCTL START HYSTERIA-SERVER
+    SYSTEMCTL ENABLE HYSTERIA-SERVER >/DEV/NULL 2>&1
 }
 
-stophysteria(){
-    systemctl stop hysteria-server
-    systemctl disable hysteria-server >/dev/null 2>&1
+STOPHYSTERIA(){
+    SYSTEMCTL STOP HYSTERIA-SERVER
+    SYSTEMCTL DISABLE HYSTERIA-SERVER >/DEV/NULL 2>&1
 }
 
-hysteriaswitch(){
-    light_purple "鳴神の少し響みて さし曇り"
-    light_purple "雨も降らぬか 君を留めむ"
-    echo ""
-    echo -e " ${GREEN}1.${PLAIN} START"
-    echo -e " ${GREEN}2.${PLAIN} SHUTDOWN"
-    echo -e " ${GREEN}3.${PLAIN} REBOOT"
-    echo ""
-    read -rp "OPTION [0-3]: " switchInput
-    case $switchInput in
-        1 ) starthysteria ;;
-        2 ) stophysteria ;;
-        3 ) stophysteria && starthysteria ;;
-        * ) exit 1 ;;
-    esac
+HYSTERIASWITCH(){
+    LIGHT_PURPLE "aYAHA IS WATCHING OVER YOU."
+    ECHO ""
+    ECHO -E " ${green}1.${plain} sTART"
+    ECHO -E " ${green}2.${plain} sHUTDOWN"
+    ECHO -E " ${green}3.${plain} rEBOOT"
+    ECHO ""
+    READ -RP "oPTION [0-3]: " SWITCHiNPUT
+    CASE $SWITCHiNPUT IN
+        1 ) STARTHYSTERIA ;;
+        2 ) STOPHYSTERIA ;;
+        3 ) STOPHYSTERIA && STARTHYSTERIA ;;
+        * ) EXIT 1 ;;
+    ESAC
 }
 
-changeport(){
-    oldport=$(cat /etc/hysteria/config.yaml 2>/dev/null | sed -n 1p | awk '{print $2}' | awk -F ":" '{print $2}')
+CHANGEPORT(){
+    OLDPORT=$(CAT /ETC/HYSTERIA/CONFIG.YAML 2>/DEV/NULL | SED -N 1P | AWK '{PRINT $2}' | AWK -f ":" '{PRINT $2}')
     
-    read -p "ENTER HYSTERIA 2 PORT [1-65535] (PRESS ENTER FOR RANDOM PORT): " port
-    [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
+    READ -P "eNTER THE PORT [1-65535] (DEFAULT FOR RANDOM): " PORT
+    [[ -Z $PORT ]] && PORT=$(SHUF -I 2000-65535 -N 1)
 
-    until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
-        if [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; then
-            echo -e "${RED} PORT $port ${PLAIN} IS ALREADY IN USE BY ANOTHER APPLICATION. PLEASE CHOOSE A DIFFERENT PORT!"
-            read -p "SET HYSTERIA 2 PORT [1-65535] (PRESS ENTER FOR RANDOM PORT): " port
-            [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
-        fi
-    done
+    UNTIL [[ -Z $(SS -TUNLP | GREP -W UDP | AWK '{PRINT $5}' | SED 'S/.*://G' | GREP -W "$PORT") ]]; DO
+        IF [[ -N $(SS -TUNLP | GREP -W UDP | AWK '{PRINT $5}' | SED 'S/.*://G' | GREP -W "$PORT") ]]; THEN
+            ECHO -E "${red} pORT $PORT ${plain} OCCUPIED. pLEASE CHOOSE A DIFFERENT pORT!"
+            READ -P "sET THE PORT [1-65535] (DEFAULT FOR RANDOM): " PORT
+            [[ -Z $PORT ]] && PORT=$(SHUF -I 2000-65535 -N 1)
+        FI
+    DONE
 
-    sed -i "1s#$oldport#$port#g" /etc/hysteria/config.yaml
-    sed -i "1s#$oldport#$port#g" /root/hy/HY4SURGE.txt
+    SED -I "1S#$OLDPORT#$PORT#G" /ETC/HYSTERIA/CONFIG.YAML
+    SED -I "1S#$OLDPORT#$PORT#G" /ROOT/HY/hy4surge.TXT
 
-    stophysteria && starthysteria
+    STOPHYSTERIA && STARTHYSTERIA
 
-    green "PORT UPDATED: $port"
-    yellow "PLEASE MANUALLY UPDATE THE CLIENT CONFIGURATION FILE TO USE THE NODE"
-    showconf
+    GREEN "pORT UPDATED: $PORT"
+    SHOWCONF
 }
 
-changepasswd(){
-    oldpasswd=$(cat /etc/hysteria/config.yaml 2>/dev/null | sed -n 15p | awk '{print $2}')
+CHANGEPASSWD(){
+    OLDPASSWD=$(CAT /ETC/HYSTERIA/CONFIG.YAML 2>/DEV/NULL | SED -N 15P | AWK '{PRINT $2}')
 
-    read -p "ENTER HYSTERIA 2 PASSWORD (PRESS ENTER FOR RANDOM): " passwd
-    [[ -z $passwd ]] && passwd=$(date +%s%N | md5sum | cut -c 1-8)
+    READ -P "eNTER PASSWORD FOR hYSTERIA 2 (DEFAULT FOR RANDOM): " PASSWD
+    [[ -Z $PASSWD ]] && PASSWD=$(DATE +%S%n | MD5SUM | CUT -C 1-8)
 
-    sed -i "1s#$oldpasswd#$passwd#g" /etc/hysteria/config.yaml
-    sed -i "1s#$oldpasswd#$passwd#g" /root/hy/HY4SURGE.txt
+    SED -I "1S#$OLDPASSWD#$PASSWD#G" /ETC/HYSTERIA/CONFIG.YAML
+    SED -I "1S#$OLDPASSWD#$PASSWD#G" /ROOT/HY/hy4surge.TXT
 
-    stophysteria && starthysteria
+    STOPHYSTERIA && STARTHYSTERIA
 
-    green "PASSWORD UPDATED: $auth_pwd"
-    yellow "PLEASE MANUALLY UPDATE THE CLIENT CONFIGURATION FILE TO USE THE NODE"
-    showconf
+    GREEN "pASSWORD UPDATED: $AUTH_PWD"
+    SHOWCONF
 }
 
-change_cert(){
-    old_cert=$(cat /etc/hysteria/config.yaml | grep cert | awk -F " " '{print $2}')
-    old_key=$(cat /etc/hysteria/config.yaml | grep key | awk -F " " '{print $2}')
-    old_hydomain=$(cat /root/hy/HY4SURGE.txt | grep sni | awk '{print $2}')
+CHANGE_CERT(){
+    OLD_CERT=$(CAT /ETC/HYSTERIA/CONFIG.YAML | GREP CERT | AWK -f " " '{PRINT $2}')
+    OLD_KEY=$(CAT /ETC/HYSTERIA/CONFIG.YAML | GREP KEY | AWK -f " " '{PRINT $2}')
+    OLD_HYDOMAIN=$(CAT /ROOT/HY/hy4surge.TXT | GREP SNI | AWK '{PRINT $2}')
 
-    inst_cert
+    INST_CERT
 
-    sed -i "s!$old_cert!$cert_path!g" /etc/hysteria/config.yaml
-    sed -i "s!$old_key!$key_path!g" /etc/hysteria/config.yaml
-    sed -i "6s/$old_hydomain/$hy_domain/g" /root/hy/HY4SURGE.txt
+    SED -I "S!$OLD_CERT!$CERT_PATH!G" /ETC/HYSTERIA/CONFIG.YAML
+    SED -I "S!$OLD_KEY!$KEY_PATH!G" /ETC/HYSTERIA/CONFIG.YAML
+    SED -I "6S/$OLD_HYDOMAIN/$HY_DOMAIN/G" /ROOT/HY/hy4surge.TXT
 
-    stophysteria && starthysteria
+    STOPHYSTERIA && STARTHYSTERIA
 
-    green "HYSTERIA 2 NODE CERTIFICATE TYPE SUCCESSFULLY CHANGED"
-    yellow "PLEASE MANUALLY UPDATE CLIENT CONFIGURATION FILE TO USE NODE"
-    showconf
+    GREEN "cERTIFICATE MODIFIED SUCCESSFULLY"
+    SHOWCONF
 }
 
-changeproxysite(){
-    oldproxysite=$(cat /etc/hysteria/config.yaml | grep url | awk -F " " '{print $2}' | awk -F "https://" '{print $2}')
+CHANGEPROXYSITE(){
+    OLDPROXYSITE=$(CAT /ETC/HYSTERIA/CONFIG.YAML | GREP URL | AWK -f " " '{PRINT $2}' | AWK -f "HTTPS://" '{PRINT $2}')
     
-    inst_site
+    INST_SITE
 
-    sed -i "s#$oldproxysite#$proxysite#g" /etc/caddy/Caddyfile
+    SED -I "S#$OLDPROXYSITE#$PROXYSITE#G" /ETC/CADDY/cADDYFILE
 
-    stophysteria && starthysteria
+    STOPHYSTERIA && STARTHYSTERIA
 
-    green "HYSTERIA 2 NODE PROXY SITE SUCCESSFULLY CHANGED TO: $proxysite"
+    GREEN "tHE FAKE WEBSITE MODIFIED SUCCESSFULLY : $PROXYSITE"
 }
 
-changeconf(){
-    green "HYSTERIA 2 CONFIGURATION OPTIONS:"
-    echo -e " ${GREEN}1.${PLAIN} CHANGE PORT"
-    echo -e " ${GREEN}2.${PLAIN} CHANGE PASSWORD"
-    echo -e " ${GREEN}3.${PLAIN} CHANGE CERTIFICATE"
-    echo -e " ${GREEN}4.${PLAIN} CHANGE PROXY SITE"
-    echo ""
-    read -p " PLEASE SELECT AN OPTION [1-4]: " confAnswer
-    case $confAnswer in
-        1 ) changeport ;;
-        2 ) changepasswd ;;
-        3 ) change_cert ;;
-        4 ) changeproxysite ;;
-        * ) exit 1 ;;
-    esac
+CHANGECONF(){
+    GREEN "sELECT AN OPTION:"
+    ECHO -E " ${green}1.${plain} mODIFY PORT"
+    ECHO -E " ${green}2.${plain} mODIFY PASSWORD"
+    ECHO -E " ${green}3.${plain} mODIFY CERTIFICATE"
+    ECHO -E " ${green}4.${plain} mODIFY FAKE SITE"
+    ECHO ""
+    READ -P " pLEASE SELECT AN OPTION [1-4]: " CONFaNSWER
+    CASE $CONFaNSWER IN
+        1 ) CHANGEPORT ;;
+        2 ) CHANGEPASSWD ;;
+        3 ) CHANGE_CERT ;;
+        4 ) CHANGEPROXYSITE ;;
+        * ) EXIT 1 ;;
+    ESAC
 }
 
-showconf(){
-    yellow "HYSTERIA 2 NODE SHARE LINK:"
-    red "$(cat /root/hy/url.txt)"
-    yellow "HYSTERIA 2 NODE SINGLE PORT SHARE LINK:"
-    red "$(cat /root/hy/url-nohop.txt)"
-    yellow "HYSTERIA 2 NODE INFO FOR SURGE:"
-    red "$(cat /root/hy/HY4SURGE.txt)"
+SHOWCONF(){
+    YELLOW "sHARE LINK GENERATED:"
+    RED "$(CAT /ROOT/HY/URL.TXT)"
+    YELLOW "sHARE (SINGLE-PORT) LINK GENERATED:"
+    RED "$(CAT /ROOT/HY/URL-NOHOP.TXT)"
+    YELLOW "pROXY INFO (surge):"
+    RED "$(CAT /ROOT/HY/hy4surge.TXT)"
 }
 
-update_core(){
-    # ReInstall Hysteria 2
-    bash <(curl -fsSL https://get.hy2.sh/)
+UPDATE_CORE(){
+    # rEiNSTALL hYSTERIA 2
+    BASH <(CURL -FSsl HTTPS://GET.HY2.SH/)
 }
 
-menu() {
-    clear
-    echo -e " ${LIGHT_PURPLE}HYSTERIA 2${PLAIN}"
-    echo ""
-    echo -e " ${UNDERLINE_PURPLE}AT WHAT SPEED MUST I LIVE, TO BE ABLE TO SEE YOU AGAIN?${PLAIN}"
-    echo " --------------------------------------------------------------------------------"
-    echo -e " ${LIGHT_GREEN}1.${PLAIN} INSTALL"
-    echo -e " ${LIGHT_GREEN}2.${PLAIN} ${RED}UNINSTALL${PLAIN}"
-    echo " --------------------------------------------------------------------------------"
-    echo -e " ${LIGHT_GRAY}3.${PLAIN} STOP, START, RESTART"
-    echo -e " ${LIGHT_GRAY}4.${PLAIN} MODIF CONFIG"
-    echo -e " ${LIGHT_GRAY}5.${PLAIN} DISPLAY CONFIG"
-    echo " --------------------------------------------------------------------------------"
-    echo -e " ${LIGHT_YELLOW}6.${PLAIN} UPDATE CORE"
-    echo " --------------------------------------------------------------------------------"
-    echo -e " ${PURPLE}0.${PLAIN} EXIT"
-    echo ""
-    read -rp "PLEASE ENTER AN OPTION [0-5]: " menuInput
-    case $menuInput in
-        1 ) insthysteria ;;
-        2 ) unsthysteria ;;
-        3 ) hysteriaswitch ;;
-        4 ) changeconf ;;
-        5 ) showconf ;;
-        6 ) update_core ;;
-        0 ) exit 1 ;;
-        * ) menu ;;
-    esac
+MENU() {
+    CLEAR
+    ECHO -E " ${light_purple}hysteria 2${plain}"
+    ECHO ""
+    ECHO -E " ${underline_purple}aT WHAT SPEED MUST I LIVE, TO BE ABLE TO SEE YOU AGAIN?${plain}"
+    ECHO " --------------------------------------------------------------------------------"
+    ECHO -E " ${light_green}1.${plain} iNSTALL"
+    ECHO -E " ${light_green}2.${plain} ${red}uNINSTALL${plain}"
+    ECHO " --------------------------------------------------------------------------------"
+    ECHO -E " ${light_gray}3.${plain} sTOP, sTART, rESTART"
+    ECHO -E " ${light_gray}4.${plain} mODIF CONFIG"
+    ECHO -E " ${light_gray}5.${plain} cHECK CONFIG"
+    ECHO " --------------------------------------------------------------------------------"
+    ECHO -E " ${light_yellow}6.${plain} uPDATE CORE"
+    ECHO " --------------------------------------------------------------------------------"
+    ECHO -E " ${purple}0.${plain} exit"
+    ECHO ""
+    READ -RP "pLEASE SELECT AN OPTION [0-5]: " MENUiNPUT
+    CASE $MENUiNPUT IN
+        1 ) INSTHYSTERIA ;;
+        2 ) UNSTHYSTERIA ;;
+        3 ) HYSTERIASWITCH ;;
+        4 ) CHANGECONF ;;
+        5 ) SHOWCONF ;;
+        6 ) UPDATE_CORE ;;
+        0 ) EXIT 1 ;;
+        * ) MENU ;;
+    ESAC
 }
 
-menu
+MENU
