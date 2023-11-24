@@ -261,6 +261,12 @@ inst_site() {
 
 
 insthysteria(){
+
+    if netstat -tuln | grep -q ":80 "; then
+        echo "Port 80 is already in use. Exiting..."
+        exit 1
+    fi
+
     warpv6=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
     warpv4=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
     if [[ $warpv4 =~ on|plus || $warpv6 =~ on|plus ]]; then
