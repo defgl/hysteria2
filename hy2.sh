@@ -10,16 +10,6 @@ PLAIN="\033[0m"
 BLUE="\033[34m"
 PURPLE="\033[35m"
 CYAN="\033[36m"
-LIGHT_GRAY="\033[37m"
-DARK_GRAY="\033[90m"
-LIGHT_RED="\033[91m"
-LIGHT_GREEN="\033[92m"
-LIGHT_YELLOW="\033[93m"
-LIGHT_BLUE="\033[94m"
-LIGHT_PURPLE="\033[95m"
-UNDERLINE_PURPLE="\e[4;35m"
-LIGHT_CYAN="\033[96m"
-WHITE="\033[97m"
 
 # 相应的函数
 
@@ -46,35 +36,6 @@ purple(){
 cyan(){
     echo -e "${CYAN}\033[01m$1${PLAIN}"
 }
-
-light_red(){
-    echo -e "${LIGHT_RED}\033[01m$1${PLAIN}"
-}
-
-light_green(){
-    echo -e "${LIGHT_GREEN}\033[01m$1${PLAIN}"
-}
-
-light_yellow(){
-    echo -e "${LIGHT_YELLOW}\033[01m$1${PLAIN}"
-}
-
-light_blue(){
-    echo -e "${LIGHT_BLUE}\033[01m$1${PLAIN}"
-}
-
-light_purple(){
-    echo -e "${LIGHT_PURPLE}\033[01m$1${PLAIN}"
-}
-
-light_cyan(){
-    echo -e "${LIGHT_CYAN}\033[01m$1${PLAIN}"
-}
-
-white(){
-    echo -e "${WHITE}\033[01m$1${PLAIN}"
-}
-
 
 # Check for root privileges
 [[ $EUID -ne 0 ]] && red "PLEASE RUN AS ROOT" && exit 1
@@ -113,14 +74,37 @@ realip(){
 }
 
 inst_cert(){
-    green "选择证书申请方式:"
+    green "Select certificate application method:"
     echo ""
-    echo -e " ${GREEN}1.${PLAIN} 使用ACME申请证书"
-    echo -e " ${GREEN}2.${PLAIN} 使用OpenSSL生成伪证书"
-    echo -e " ${GREEN}3.${PLAIN} 自定义证书"
+    echo -e " ${GREEN}1.${PLAIN} Apply using ACME"
+    echo -e " ${GREEN}2.${PLAIN} Apply using OpenSSL"
+    echo -e " ${GREEN}3.${PLAIN} Use custom certificate"
     echo ""
     read -rp "Option [1-3]: " certInput
-    if [[ $certInput == 1 ]]; then
+    if [[ $certInput == 2 ]]; then
+        green "Confirmed: OpenSSL"
+
+        cert_path="/etc/hysteria/cert.crt"
+        key_path="/etc/hysteria/private.key"
+        openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
+        openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
+        chmod 777 /etc/hysteria/cert.crt
+        chmod 777 /etc/hysteria/private.key
+        hy_domain="www.bing.com"
+        domain="www.bing.com"
+
+
+    elif [[ $certInput == 3 ]]; then
+        read -p "ENTER PATH TO PUBLIC KEY FILE (CRT): " cert_path
+        yellow "PUBLIC KEY FILE (CRT) PATH: $certpath "
+        read -p "ENTER PATH TO PRIVATE KEY FILE (KEY): " key_path
+        yellow "PRIVATE KEY FILE (KEY) PATH: $keypath "
+        read -p "ENTER CERTIFICATE DOMAIN: " domain
+        yellow "CERTIFICATE DOMAIN: $domain"    
+        hy_domain=$domain
+    else
+
+        green "Confirmed: ACME"
         cert_path="/root/cert.crt"
         key_path="/root/private.key"
 
@@ -143,7 +127,7 @@ inst_cert(){
                 realip
             fi
             
-            read -p "DOMAIN FOR APPLYING CERTIFICATE:" domain
+            read -p "Domain for applying:" domain
             [[ -z $domain ]] && red "INVALID INPUT, EXITING SCRIPT" && exit 1
             green "Confirmed:$domain" && sleep 1
             domainIP=$(curl -sm8 ipget.net/?ip="${domain}")
@@ -183,25 +167,6 @@ inst_cert(){
                 exit 1
             fi
         fi
-    elif [[ $certInput == 3 ]]; then
-        read -p "ENTER PATH TO PUBLIC KEY FILE (CRT): " cert_path
-        yellow "PUBLIC KEY FILE (CRT) PATH: $certpath "
-        read -p "ENTER PATH TO PRIVATE KEY FILE (KEY): " key_path
-        yellow "PRIVATE KEY FILE (KEY) PATH: $keypath "
-        read -p "ENTER CERTIFICATE DOMAIN: " domain
-        yellow "CERTIFICATE DOMAIN: $domain"    
-        hy_domain=$domain
-    else
-        green "USING SELF-SIGNED CERTIFICATE (OpenSSL)"
-
-        cert_path="/etc/hysteria/cert.crt"
-        key_path="/etc/hysteria/private.key"
-        openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
-        openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
-        chmod 777 /etc/hysteria/cert.crt
-        chmod 777 /etc/hysteria/private.key
-        hy_domain="www.bing.com"
-        domain="www.bing.com"
     fi
 }
 
