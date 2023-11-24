@@ -37,43 +37,34 @@ cyan(){
     echo -e "${CYAN}\033[01m$1${PLAIN}"
 }
 
-# Check for root privileges
-[[ $EUID -ne 0 ]] && red "PLEASE RUN AS ROOT" && exit 1
+# 判断系统及定义系统安装依赖方式
+REGEX=("debian" "ubuntu" "centos|red hat|kernel|oracle linux|alma|rocky" "'amazon linux'" "fedora")
+RELEASE=("Debian" "Ubuntu" "CentOS" "CentOS" "Fedora")
+PACKAGE_UPDATE=("apt-get update" "apt-get update" "yum -y update" "yum -y update" "yum -y update")
+PACKAGE_INSTALL=("apt -y install" "apt -y install" "yum -y install" "yum -y install" "yum -y install")
+PACKAGE_REMOVE=("apt -y remove" "apt -y remove" "yum -y remove" "yum -y remove" "yum -y remove")
+PACKAGE_UNINSTALL=("apt -y autoremove" "apt -y autoremove" "yum -y autoremove" "yum -y autoremove" "yum -y autoremove")
 
-# Simplify OS detection
-OS_NAME=$(grep -Eo "(debian|ubuntu|centos|fedora|red hat|oracle linux|alma|rocky|amazon linux)" /etc/os-release | tr '[:upper:]' '[:lower:]' | head -n 1)
+[[ $EUID -ne 0 ]] && red "Please run as root" && exit 1
 
-# Define package management commands based on OS
-case "$OS_NAME" in
-    debian|ubuntu)
-        PACKAGE_MANAGER_UPDATE="apt-get update"
-        PACKAGE_MANAGER_INSTALL="apt-get install -y"
-        ;;
-    centos|red\ hat|oracle\ linux|alma|rocky)
-        PACKAGE_MANAGER_UPDATE="yum update -y"
-        PACKAGE_MANAGER_INSTALL="yum install -y"
-        ;;
-    fedora)
-        PACKAGE_MANAGER_UPDATE="dnf update -y"
-        PACKAGE_MANAGER_INSTALL="dnf install -y"
-        ;;
-    *)
-        red "UNSUPPORTED OS"
-        exit 1
-        ;;
-esac
+CMD=("$(grep -i pretty_name /etc/os-release 2>/dev/null | cut -d \" -f2)" "$(hostnamectl 2>/dev/null | grep -i system | cut -d : -f2)" "$(lsb_release -sd 2>/dev/null)" "$(grep -i description /etc/lsb-release 2>/dev/null | cut -d \" -f2)" "$(grep . /etc/redhat-release 2>/dev/null)" "$(grep . /etc/issue 2>/dev/null | cut -d \\ -f1 | sed '/^[ ]*$/d')")
 
-# Update packages
-$PACKAGE_MANAGER_UPDATE
-
-# Define the packages to be installed
-packages=("curl" "wget" "sudo" "qrencode" "procps" "iptables-persistent" "netfilter-persistent" "net-tools")
-
-# Install each package
-for package in "${packages[@]}"
-do
-    $PACKAGE_MANAGER_INSTALL $package
+for i in "${CMD[@]}"; do
+    SYS="$i" && [[ -n $SYS ]] && break
 done
+
+for ((int = 0; int < ${#REGEX[@]}; int++)); do
+    [[ $(echo "$SYS" | tr '[:upper:]' '[:lower:]') =~ ${REGEX[int]} ]] && SYSTEM="${RELEASE[int]}" && [[ -n $SYSTEM ]] && break
+done
+
+[[ -z $SYSTEM ]] && red "OS Not Supported" && exit 1
+
+if [[ -z $(type -P curl) ]]; then
+    if [[ ! $SYSTEM == "CentOS" ]]; then
+        ${PACKAGE_UPDATE[int]}
+    fi
+    ${PACKAGE_INSTALL[int]} curl
+fi
 
 realip(){
     ip=$(curl -s4m8 ip.sb -k) || ip=$(curl -s6m8 ip.sb -k)
@@ -130,27 +121,6 @@ inst_cert(){
                     systemctl start cron
                     systemctl enable cron
                 fi
-
-                # Define the packages to be installed
-                packages=("curl" "wget" "sudo" "socat" "openssl")
-                
-                # Install each package
-                for package in "${packages[@]}"
-                do
-                    ${PACKAGE_INSTALL[int]} $package
-                done
-                
-                # Install and start cron service based on the system type
-                if [[ $SYSTEM == "CentOS" ]]; then
-                    ${PACKAGE_INSTALL[int]} cronie
-                    service crond start
-                    chkconfig crond on
-                else 
-                    ${PACKAGE_INSTALL[int]} cron
-                    service cron start
-                    update-rc.d cron defaults
-                fi
-
                 curl https://get.acme.sh | sh -s email=$(date +%s%N | md5sum | cut -c 1-16)@gmail.com
                 source ~/.bashrc
                 bash ~/.acme.sh/acme.sh --upgrade --auto-upgrade
@@ -273,13 +243,8 @@ insthysteria(){
     if [[ ! ${SYSTEM} == "CentOS" ]]; then
         ${PACKAGE_UPDATE}
     fi
+    ${PACKAGE_INSTALL} curl wget sudo qrencode procps iptables-persistent netfilter-persistent
 
-    packages=("curl" "wget" "sudo" "qrencode" "procps" "iptables-persistent" "netfilter-persistent")
-
-    for package in "${packages[@]}"
-    do
-        ${PACKAGE_INSTALL} $package
-    done
 
     # Install Hysteria 2
     bash <(curl -fsSL https://get.hy2.sh/)
