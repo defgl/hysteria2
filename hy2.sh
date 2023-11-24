@@ -294,11 +294,16 @@ EOF
         last_port=$port
     fi
 
-    # 给 IPv6 地址加中括号
-    if [[ -n $(echo $ip | grep ":") ]]; then
-        last_ip="[$ip]"
+    # Check if inst_cert is set to "echo -e " ${GREEN}1.${PLAIN} Use ACME (default)""
+    if [[ $certInput == 1 ]]; then
+        last_ip=$domain
     else
-        last_ip=$ip
+        # Add brackets to IPv6 addresses
+        if [[ -n $(echo $ip | grep ":") ]]; then
+            last_ip="[$ip]"
+        else
+            last_ip=$ip
+        fi
     fi
 
     mkdir /root/hy
