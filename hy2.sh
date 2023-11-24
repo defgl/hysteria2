@@ -67,7 +67,7 @@ esac
 $PACKAGE_MANAGER_UPDATE
 
 # Define the packages to be installed
-packages=("curl" "wget" "sudo" "qrencode" "procps" "iptables-persistent" "netfilter-persistent" "netstat" )
+packages=("curl" "wget" "sudo" "qrencode" "procps" "iptables-persistent" "netfilter-persistent" "net-tools")
 
 # Install each package
 for package in "${packages[@]}"
