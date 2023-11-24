@@ -358,7 +358,7 @@ EOF
     red "$(cat /root/hy/url-nohop.txt)"
     yellow "Hysteria 2 proxy share info for SURGE (path: /root/hy/HY4SURGE.txt):"
     red "$(cat /root/hy/HY4SURGE.txt)"
-
+}
 
 unsthysteria(){
     systemctl stop hysteria-server.service >/dev/null 2>&1
