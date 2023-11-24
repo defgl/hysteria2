@@ -67,7 +67,7 @@ esac
 $PACKAGE_MANAGER_UPDATE
 
 # Define the packages to be installed
-packages=("curl" "wget" "sudo" "qrencode" "procps" "iptables-persistent" "netfilter-persistent")
+packages=("curl" "wget" "sudo" "qrencode" "procps" "iptables-persistent" "netfilter-persistent" "netstat" )
 
 # Install each package
 for package in "${packages[@]}"
@@ -130,6 +130,27 @@ inst_cert(){
                     systemctl start cron
                     systemctl enable cron
                 fi
+
+                # Define the packages to be installed
+                packages=("curl" "wget" "sudo" "socat" "openssl")
+                
+                # Install each package
+                for package in "${packages[@]}"
+                do
+                    ${PACKAGE_INSTALL[int]} $package
+                done
+                
+                # Install and start cron service based on the system type
+                if [[ $SYSTEM == "CentOS" ]]; then
+                    ${PACKAGE_INSTALL[int]} cronie
+                    service crond start
+                    chkconfig crond on
+                else 
+                    ${PACKAGE_INSTALL[int]} cron
+                    service cron start
+                    update-rc.d cron defaults
+                fi
+
                 curl https://get.acme.sh | sh -s email=$(date +%s%N | md5sum | cut -c 1-16)@gmail.com
                 source ~/.bashrc
                 bash ~/.acme.sh/acme.sh --upgrade --auto-upgrade
