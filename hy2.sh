@@ -63,11 +63,17 @@ case "$OS_NAME" in
         ;;
 esac
 
-# Update and install required packages
+# Update packages
 $PACKAGE_MANAGER_UPDATE
-$PACKAGE_MANAGER_INSTALL curl wget sudo qrencode procps iptables-persistent netfilter-persistent
 
-# Additional logic if needed...
+# Define the packages to be installed
+packages=("curl" "wget" "sudo" "qrencode" "procps" "iptables-persistent" "netfilter-persistent")
+
+# Install each package
+for package in "${packages[@]}"
+do
+    $PACKAGE_MANAGER_INSTALL $package
+done
 
 realip(){
     ip=$(curl -s4m8 ip.sb -k) || ip=$(curl -s6m8 ip.sb -k)
@@ -76,35 +82,17 @@ realip(){
 inst_cert(){
     green "Select certificate application method:"
     echo ""
-    echo -e " ${GREEN}1.${PLAIN} Apply using ACME"
-    echo -e " ${GREEN}2.${PLAIN} Apply using OpenSSL"
+    echo -e " ${GREEN}1.${PLAIN} Use ACME (default)"
+    echo -e " ${GREEN}2.${PLAIN} Generate OpenSSL pseudo-certificate"
     echo -e " ${GREEN}3.${PLAIN} Use custom certificate"
     echo ""
     read -rp "Option [1-3]: " certInput
-    if [[ $certInput == 2 ]]; then
-        green "Confirmed: OpenSSL"
 
-        cert_path="/etc/hysteria/cert.crt"
-        key_path="/etc/hysteria/private.key"
-        openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
-        openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
-        chmod 777 /etc/hysteria/cert.crt
-        chmod 777 /etc/hysteria/private.key
-        hy_domain="www.bing.com"
-        domain="www.bing.com"
-
-
-    elif [[ $certInput == 3 ]]; then
-        read -p "ENTER PATH TO PUBLIC KEY FILE (CRT): " cert_path
-        yellow "PUBLIC KEY FILE (CRT) PATH: $certpath "
-        read -p "ENTER PATH TO PRIVATE KEY FILE (KEY): " key_path
-        yellow "PRIVATE KEY FILE (KEY) PATH: $keypath "
-        read -p "ENTER CERTIFICATE DOMAIN: " domain
-        yellow "CERTIFICATE DOMAIN: $domain"    
-        hy_domain=$domain
-    else
-
-        green "Confirmed: ACME"
+    # If no input is provided, default to 1 (Apply using ACME)
+    if [[ -z "$certInput" ]]; then
+        certInput=1
+    fi
+    if [[ $certInput == 1 ]]; then
         cert_path="/root/cert.crt"
         key_path="/root/private.key"
 
@@ -112,7 +100,7 @@ inst_cert(){
 
         if [[ -f /root/cert.crt && -f /root/private.key ]] && [[ -s /root/cert.crt && -s /root/private.key ]] && [[ -f /root/ca.log ]]; then
             domain=$(cat /root/ca.log)
-            green "EXISTING CERTIFICATE DETECTED FOR DOMAIN: $domain, APPLYING"
+            green "Existing certificate detected for domain: $domain, applying"
             hy_domain=$domain
         else
             WARPv4Status=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
@@ -127,8 +115,8 @@ inst_cert(){
                 realip
             fi
             
-            read -p "Domain for applying:" domain
-            [[ -z $domain ]] && red "INVALID INPUT, EXITING SCRIPT" && exit 1
+            read -p "Enter domain to apply for certificate: " domain
+            [[ -z $domain ]] && red "Invalid input, exiting script" && exit 1
             green "Confirmed:$domain" && sleep 1
             domainIP=$(curl -sm8 ipget.net/?ip="${domain}")
             if [[ $domainIP == $ip ]]; then
@@ -156,17 +144,34 @@ inst_cert(){
                     echo $domain > /root/ca.log
                     sed -i '/--cron/d' /etc/crontab >/dev/null 2>&1
                     echo "0 0 * * * root bash /root/.acme.sh/acme.sh --cron -f >/dev/null 2>&1" >> /etc/crontab
-                    green "CERTIFICATE APPLICATION SUCCESSFUL! CERTIFICATE (cert.crt) AND PRIVATE KEY (private.key) SAVED TO /root DIRECTORY"
-                    yellow "CERTIFICATE CRT FILE PATH: /root/cert.crt"
-                    yellow "PRIVATE KEY FILE PATH: /root/private.key"
+                    green "Certificate and key generated successfully and saved in /root directory."
+                    yellow "Certificate path: /root/cert.crt"
+                    yellow "Key path: /root/private.key"
                     hy_domain=$domain
                 fi
-
             else
-                red "DOMAIN NAME PROVIDED CANNOT BE RESOLVED"
+                red "Domain name provided cannot be resolved"
                 exit 1
             fi
         fi
+    elif [[ $certInput == 3 ]]; then
+        read -p "Enter public key (CRT) path: " cert_path
+        yellow "Public key path: $cert_path"
+        read -p "Enter private key (KEY) path: " key_path
+        yellow "Private key path: $key_path"
+        read -p "Enter certificate domain: " domain
+        yellow "Certificate domain: $domain"
+        hy_domain=$domain
+    else
+        green "Using self-signed certificate (OpenSSL)"
+        cert_path="/etc/hysteria/cert.crt"
+        key_path="/etc/hysteria/private.key"
+        openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
+        openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
+        chmod 777 /etc/hysteria/cert.crt
+        chmod 777 /etc/hysteria/private.key
+        hy_domain="www.bing.com"
+        domain="www.bing.com"
     fi
 }
 
@@ -184,7 +189,7 @@ inst_port(){
     done
 
 
-    yellow "PORT Confirmed:$port"
+    yellow "Confirmed:$port"
     inst_jump
 }
 
@@ -247,7 +252,13 @@ insthysteria(){
     if [[ ! ${SYSTEM} == "CentOS" ]]; then
         ${PACKAGE_UPDATE}
     fi
-    ${PACKAGE_INSTALL} curl wget sudo qrencode procps iptables-persistent netfilter-persistent
+
+    packages=("curl" "wget" "sudo" "qrencode" "procps" "iptables-persistent" "netfilter-persistent")
+
+    for package in "${packages[@]}"
+    do
+        ${PACKAGE_INSTALL} $package
+    done
 
     # Install Hysteria 2
     bash <(curl -fsSL https://get.hy2.sh/)
