@@ -232,11 +232,18 @@ insthysteria(){
         realip
     fi
 
+    # if [ $DISTRO = "CentOS" ]; then
+    #   sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent netfilter-persistent
+    # else
+    #   sudo $PACKAGE_MANAGER update 
+    #   sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent netfilter-persistent
+    # fi
+
     if [ $DISTRO = "CentOS" ]; then
-      sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent netfilter-persistent
+      sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent net-tools
     else
-      sudo $PACKAGE_MANAGER update 
-      sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent netfilter-persistent
+      sudo $PACKAGE_MANAGER update
+      sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent net-tools  
     fi
 
 
