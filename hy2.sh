@@ -37,33 +37,24 @@ cyan(){
     echo -e "${CYAN}\033[01m$1${PLAIN}"
 }
 
-# 判断系统及定义系统安装依赖方式
-REGEX=("debian" "ubuntu" "centos|red hat|kernel|oracle linux|alma|rocky" "'amazon linux'" "fedora")
-RELEASE=("Debian" "Ubuntu" "CentOS" "CentOS" "Fedora")
-PACKAGE_UPDATE=("apt-get update" "apt-get update" "yum -y update" "yum -y update" "yum -y update")
-PACKAGE_INSTALL=("apt -y install" "apt -y install" "yum -y install" "yum -y install" "yum -y install")
-PACKAGE_REMOVE=("apt -y remove" "apt -y remove" "yum -y remove" "yum -y remove" "yum -y remove")
-PACKAGE_UNINSTALL=("apt -y autoremove" "apt -y autoremove" "yum -y autoremove" "yum -y autoremove" "yum -y autoremove")
+DISTRO=$(lsb_release -is)
 
-[[ $EUID -ne 0 ]] && red "Please run as root" && exit 1
+case $DISTRO in
+  Ubuntu|Debian)
+    PACKAGE_MANAGER="apt"
+  ;;
+  CentOS|RedHat|Fedora)
+    PACKAGE_MANAGER="yum"
+  ;;
+  *)
+    echo "Unsupported distro"
+    exit 1
+  ;;  
+esac
 
-CMD=("$(grep -i pretty_name /etc/os-release 2>/dev/null | cut -d \" -f2)" "$(hostnamectl 2>/dev/null | grep -i system | cut -d : -f2)" "$(lsb_release -sd 2>/dev/null)" "$(grep -i description /etc/lsb-release 2>/dev/null | cut -d \" -f2)" "$(grep . /etc/redhat-release 2>/dev/null)" "$(grep . /etc/issue 2>/dev/null | cut -d \\ -f1 | sed '/^[ ]*$/d')")
-
-for i in "${CMD[@]}"; do
-    SYS="$i" && [[ -n $SYS ]] && break
-done
-
-for ((int = 0; int < ${#REGEX[@]}; int++)); do
-    [[ $(echo "$SYS" | tr '[:upper:]' '[:lower:]') =~ ${REGEX[int]} ]] && SYSTEM="${RELEASE[int]}" && [[ -n $SYSTEM ]] && break
-done
-
-[[ -z $SYSTEM ]] && red "OS Not Supported" && exit 1
-
-if [[ -z $(type -P curl) ]]; then
-    if [[ ! $SYSTEM == "CentOS" ]]; then
-        ${PACKAGE_UPDATE[int]}
-    fi
-    ${PACKAGE_INSTALL[int]} curl
+if ! command -v curl > /dev/null; then
+  sudo $PACKAGE_MANAGER update
+  sudo $PACKAGE_MANAGER install -y curl
 fi
 
 realip(){
@@ -111,16 +102,17 @@ inst_cert(){
             green "Confirmed:$domain" && sleep 1
             domainIP=$(curl -sm8 ipget.net/?ip="${domain}")
             if [[ $domainIP == $ip ]]; then
-                ${PACKAGE_INSTALL[int]} curl wget sudo socat openssl
-                if [[ $SYSTEM == "CentOS" ]]; then
-                    ${PACKAGE_INSTALL[int]} cronie
-                    systemctl start crond
-                    systemctl enable crond
-                else
-                    ${PACKAGE_INSTALL[int]} cron
-                    systemctl start cron
-                    systemctl enable cron
-                fi
+            sudo $PACKAGE_MANAGER install -y curl wget sudo socat openssl
+            
+            if [ $DISTRO = "CentOS" ]; then
+              sudo $PACKAGE_MANAGER install -y cronie
+              systemctl start crond
+              systemctl enable crond  
+            else
+              sudo $PACKAGE_MANAGER install -y cron 
+              systemctl start cron
+              systemctl enable cron
+            fi
                 curl https://get.acme.sh | sh -s email=$(date +%s%N | md5sum | cut -c 1-16)@gmail.com
                 source ~/.bashrc
                 bash ~/.acme.sh/acme.sh --upgrade --auto-upgrade
@@ -240,10 +232,12 @@ insthysteria(){
         realip
     fi
 
-    if [[ ! ${SYSTEM} == "CentOS" ]]; then
-        ${PACKAGE_UPDATE}
+    if [ $DISTRO = "CentOS" ]; then
+      sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent netfilter-persistent
+    else
+      sudo $PACKAGE_MANAGER update 
+      sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent netfilter-persistent
     fi
-    ${PACKAGE_INSTALL} curl wget sudo qrencode procps iptables-persistent netfilter-persistent
 
 
     # Install Hysteria 2
@@ -474,18 +468,19 @@ menu() {
     echo -e " ${LIGHT_PURPLE}Hysteria 2${PLAIN}"
     echo ""
     echo -e " ${UNDERLINE_PURPLE}At what speed must i live, to be able to see you again?${PLAIN}"
-    echo " --------------------------------------------------------------------------------"
+    # echo " --------------------------------------------------------------------------------"
     echo -e " ${LIGHT_GREEN}1.${PLAIN} Install"
     echo -e " ${LIGHT_GREEN}2.${PLAIN} ${RED}Uninstall${PLAIN}"
-    echo " --------------------------------------------------------------------------------"
+    # echo " --------------------------------------------------------------------------------"
     echo -e " ${LIGHT_GRAY}3.${PLAIN} Stop, Start, Restart"
     echo -e " ${LIGHT_GRAY}4.${PLAIN} Modify config"
     echo -e " ${LIGHT_GRAY}5.${PLAIN} Display config"
-    echo " --------------------------------------------------------------------------------"
+    # echo " --------------------------------------------------------------------------------"
     echo -e " ${LIGHT_YELLOW}6.${PLAIN} Update core"
-    echo " --------------------------------------------------------------------------------"
+    # echo " --------------------------------------------------------------------------------"
     echo -e " ${PURPLE}0.${PLAIN} Exit"
-    echo ""
+    echo " --------------------------------------------------------------------------------"
+    #echo ""
     read -rp "Option [0-5]: " menuInput
     case $menuInput in
         1 ) insthysteria ;;
