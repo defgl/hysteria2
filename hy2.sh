@@ -323,7 +323,7 @@ EOF
     else
         red "Hysteria 2 failed to start. Try 'systemctl status hysteria-server' for details. Exiting." && exit 1
     fi
-    light_purple "A faint clap of thunder, Clouded skies."
+    blue "A faint clap of thunder, Clouded skies."
     green "Hysteria 2 installed successfully."
     yellow "Hysteria 2 proxy share link (path: /root/hy/url.txt):"
     red "$(cat /root/hy/url.txt)"
