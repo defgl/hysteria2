@@ -97,10 +97,33 @@ inst_cert(){
                 realip
             fi
             
-            read -p "Enter domain to apply for certificate: " domain
-            [[ -z $domain ]] && red "Invalid input, exiting script" && exit 1
-            green "Confirmed:$domain" && sleep 1
-            domainIP=$(curl -sm8 ipget.net/?ip="${domain}")
+            read -p "Enter the domain name for certificate application: " domain
+            if [ -z "$domain" ]; then
+                echo -e "${RED}No input detected. Exiting.${PLAIN}"
+                exit 1
+            fi
+            echo -e "${GREEN}Domain confirmed: $domain${PLAIN}"
+            sleep 1
+            
+            domainIP=$(dig @8.8.8.8 +time=2 +short "$domain" 2>/dev/null)
+            if [[ -z $domainIP ]] || echo $domainIP | grep -q "network unreachable\|timed out"; then
+                domainIP=$(dig @2001:4860:4860::8888 +time=2 aaaa +short "$domain" 2>/dev/null)
+            fi
+            
+            if [[ -z $domainIP ]] || echo $domainIP | grep -q "network unreachable\|timed out"; then
+                echo -e "${RED}Failed to resolve the address. Please check the domain name.${PLAIN}"
+                echo -e "${YELLOW}Would you like to try the strict matching mode?${PLAIN}"
+                echo -e "  ${GREEN}1. Yes${PLAIN}"
+                echo -e "  ${GREEN}2. No${PLAIN}"
+                read -p "Please choose an option [1-2]: " ipChoice
+                if [[ $ipChoice == 1 ]]; then
+                    echo -e "${YELLOW}Initiating strict matching mode.${PLAIN}"
+                else
+                    echo -e "${RED}Exiting.${PLAIN}"
+                    exit 1
+                fi
+            fi
+
             if [[ $domainIP == $ip ]]; then
             sudo $PACKAGE_MANAGER install -y curl wget sudo socat openssl
             
@@ -190,7 +213,9 @@ inst_jump() {
             red "Start port must be less than end port. Please re-enter start and end ports."
             read -p "Enter start port for range (recommended 10000-65535): " firstport
             read -p "Enter end port for range (recommended 10000-65535, must be greater than start port): " endport
+            fi        
         done
+        fi
         iptables -t nat -A PREROUTING -p udp --dport $firstport:$endport  -j DNAT --to-destination :$port
         ip6tables -t nat -A PREROUTING -p udp --dport $firstport:$endport  -j DNAT --to-destination :$port
         netfilter-persistent save >/dev/null 2>&1
@@ -198,7 +223,6 @@ inst_jump() {
         red "Continuing in single port mode."
     fi
 }
-
 
 inst_pwd() {
     read -p "Enter password (default random): " auth_pwd
