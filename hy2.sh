@@ -57,6 +57,10 @@ if ! command -v curl > /dev/null; then
   sudo $PACKAGE_MANAGER install -y curl
 fi
 
+if ! command -v netstat > /dev/null; then
+    sudo $PACKAGE_MANAGER install -y net-tools
+fi
+
 realip(){
     ip=$(curl -s4m8 ip.sb -k) || ip=$(curl -s6m8 ip.sb -k)
 }
@@ -105,23 +109,20 @@ inst_cert(){
             echo -e "${GREEN}Domain confirmed: $domain${PLAIN}"
             sleep 1
             
-            domainIP=$(dig @8.8.8.8 +time=2 +short "$domain" 2>/dev/null)
-            if [[ -z $domainIP ]] || echo $domainIP | grep -q "network unreachable\|timed out"; then
-                domainIP=$(dig @2001:4860:4860::8888 +time=2 aaaa +short "$domain" 2>/dev/null)
+            read -p "Enter the domain name or IP address for resolution: " query
+            if [ -z "$query" ]; then
+                echo -e "${RED}No input detected. Exiting.${PLAIN}"
+                exit 1
             fi
             
-            if [[ -z $domainIP ]] || echo $domainIP | grep -q "network unreachable\|timed out"; then
-                echo -e "${RED}Failed to resolve the address. Please check the domain name.${PLAIN}"
-                echo -e "${YELLOW}Would you like to try the strict matching mode?${PLAIN}"
-                echo -e "  ${GREEN}1. Yes${PLAIN}"
-                echo -e "  ${GREEN}2. No${PLAIN}"
-                read -p "Please choose an option [1-2]: " ipChoice
-                if [[ $ipChoice == 1 ]]; then
-                    echo -e "${YELLOW}Initiating strict matching mode.${PLAIN}"
-                else
-                    echo -e "${RED}Exiting.${PLAIN}"
-                    exit 1
-                fi
+            response=$(curl -s "http://ip-api.com/json/$query")
+            status=$(echo $response | jq -r '.status')
+            
+            if [ "$status" == "success" ]; then
+                resolvedQuery=$(echo $response | jq -r '.query')
+                echo -e "${GREEN}Resolution successful: $resolvedQuery${PLAIN}"
+            else
+                echo -e "${RED}Failed to resolve the address. Please check the input.${PLAIN}"
             fi
 
             if [[ $domainIP == $ip ]]; then
