@@ -114,6 +114,19 @@ inst_cert(){
             echo -e "${GREEN}Domain confirmed: $domain${PLAIN}"
             sleep 1
             
+            domainIP=$(dig @8.8.8.8 +time=2 +short "$domain" 2>/dev/null)
+            if [[ -z $domainIP ]] || echo $domainIP | grep -q "network unreachable\|timed out"; then
+                domainIP=$(dig @2001:4860:4860::8888 +time=2 aaaa +short "$domain" 2>/dev/null)
+            fi
+            
+            read -p "Enter the domain name for certificate application: " domain
+            if [ -z "$domain" ]; then
+                echo -e "${RED}No input detected. Exiting.${PLAIN}"
+                exit 1
+            fi
+            echo -e "${GREEN}Domain confirmed: $domain${PLAIN}"
+            sleep 1
+            
             read -p "Enter the domain name or IP address for resolution: " query
             if [ -z "$query" ]; then
                 echo -e "${RED}No input detected. Exiting.${PLAIN}"
@@ -129,6 +142,23 @@ inst_cert(){
             else
                 echo -e "${RED}Failed to resolve the address. Please check the input.${PLAIN}"
             fi
+
+            if [[ -z $domainIP ]] || echo $domainIP | grep -q "network unreachable\|timed out"; then
+                echo -e "${RED}Failed to resolve the address. Please check the domain name.${PLAIN}"
+                echo -e "${YELLOW}Would you like to try the strict matching mode?${PLAIN}"
+                echo -e "  ${GREEN}1. Yes${PLAIN}"
+                echo -e "  ${GREEN}2. No${PLAIN}"
+                read -p "Please choose an option [1-2]: " ipChoice
+                if [[ $ipChoice == 1 ]]; then
+                    echo -e "${YELLOW}Initiating strict matching mode.${PLAIN}"
+                else
+                    echo -e "${RED}Exiting.${PLAIN}"
+                    exit 1
+                fi
+            fi
+
+            if [[ $domainIP == $ip ]]; then
+            sudo $PACKAGE_MANAGER install -y curl wget sudo socat openssl
 
             if [[ $domainIP == $ip ]]; then
             sudo $PACKAGE_MANAGER install -y curl wget sudo socat openssl
