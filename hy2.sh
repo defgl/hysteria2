@@ -213,9 +213,7 @@ inst_jump() {
             red "Start port must be less than end port. Please re-enter start and end ports."
             read -p "Enter start port for range (recommended 10000-65535): " firstport
             read -p "Enter end port for range (recommended 10000-65535, must be greater than start port): " endport
-            fi        
         done
-        fi
         iptables -t nat -A PREROUTING -p udp --dport $firstport:$endport  -j DNAT --to-destination :$port
         ip6tables -t nat -A PREROUTING -p udp --dport $firstport:$endport  -j DNAT --to-destination :$port
         netfilter-persistent save >/dev/null 2>&1
