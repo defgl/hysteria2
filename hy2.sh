@@ -61,6 +61,11 @@ if ! command -v netstat > /dev/null; then
     sudo $PACKAGE_MANAGER install -y net-tools
 fi
 
+if ! command -v jq > /dev/null; then
+    sudo $PACKAGE_MANAGER update
+    sudo $PACKAGE_MANAGER install -y jq
+fi
+
 realip(){
     ip=$(curl -s4m8 ip.sb -k) || ip=$(curl -s6m8 ip.sb -k)
 }
