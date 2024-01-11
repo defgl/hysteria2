@@ -70,7 +70,7 @@ realip(){
     ip=$(curl -s4m8 ip.sb -k) || ip=$(curl -s6m8 ip.sb -k)
 }
 
-inst_cert(){
+inst_cert() {
     green "Select certificate application method:"
     echo ""
     echo -e " ${GREEN}1.${PLAIN} Use ACME (default)"
@@ -79,23 +79,25 @@ inst_cert(){
     echo ""
     read -rp "Option [1-3]: " certInput
 
-    # If no input is provided, default to 1 (Apply using ACME)
     if [[ -z "$certInput" ]]; then
         certInput=1
     fi
-    if [[ $certInput == 1 ]]; then
-        cert_path="/root/cert.crt"
-        key_path="/root/private.key"
 
-        chmod -R 777 /root # 让 Hysteria 主程序访问到 /root 目录
+   if [[ $certInput == 1 ]]; then
+    cert_path="/root/cert.crt"
+    key_path="/root/private.key"
+    chmod -R 777 /root
 
-        if [[ -f /root/cert.crt && -f /root/private.key ]] && [[ -s /root/cert.crt && -s /root/private.key ]] && [[ -f /root/ca.log ]]; then
-            domain=$(cat /root/ca.log)
-            green "Existing certificate detected for domain: $domain, applying"
-            hy_domain=$domain
-        else
-            WARPv4Status=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-            WARPv6Status=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
+    # Check for existing certificate and keys
+    if [[ -f $cert_path && -f $key_path ]] && [[ -s $cert_path && -s $key_path ]] && [[ -f /root/ca.log ]]; then
+        domain=$(cat /root/ca.log)
+        green "Existing certificate detected for domain: $domain, applying"
+        hy_domain=$domain
+    else
+        # Handle WARP status
+        handleWARP() {
+            local WARPv4Status=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
+            local WARPv6Status=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
             if [[ $WARPv4Status =~ on|plus ]] || [[ $WARPv6Status =~ on|plus ]]; then
                 wg-quick down wgcf >/dev/null 2>&1
                 systemctl stop warp-go >/dev/null 2>&1
@@ -105,97 +107,56 @@ inst_cert(){
             else
                 realip
             fi
-            
-            read -p "Enter the domain name for certificate application: " domain
-            if [ -z "$domain" ]; then
-                echo -e "${RED}No input detected. Exiting.${PLAIN}"
-                exit 1
-            fi
-            echo -e "${GREEN}Domain confirmed: $domain${PLAIN}"
-            sleep 1
-            
-            domainIP=$(dig @8.8.8.8 +time=2 +short "$domain" 2>/dev/null)
-            if [[ -z $domainIP ]] || echo $domainIP | grep -q "network unreachable\|timed out"; then
-                domainIP=$(dig @2001:4860:4860::8888 +time=2 aaaa +short "$domain" 2>/dev/null)
-            fi
-            
-            read -p "Enter the domain name for certificate application: " domain
-            if [ -z "$domain" ]; then
-                echo -e "${RED}No input detected. Exiting.${PLAIN}"
-                exit 1
-            fi
-            echo -e "${GREEN}Domain confirmed: $domain${PLAIN}"
-            sleep 1
-            
-            read -p "Enter the domain name or IP address for resolution: " query
-            if [ -z "$query" ]; then
-                echo -e "${RED}No input detected. Exiting.${PLAIN}"
-                exit 1
-            fi
-            
-            response=$(curl -s "http://ip-api.com/json/$query")
-            status=$(echo $response | jq -r '.status')
-            
-            if [ "$status" == "success" ]; then
-                resolvedQuery=$(echo $response | jq -r '.query')
-                echo -e "${GREEN}Resolution successful: $resolvedQuery${PLAIN}"
-            else
-                echo -e "${RED}Failed to resolve the address. Please check the input.${PLAIN}"
-            fi
+        }
 
-            if [[ -z $domainIP ]] || echo $domainIP | grep -q "network unreachable\|timed out"; then
-                echo -e "${RED}Failed to resolve the address. Please check the domain name.${PLAIN}"
-                echo -e "${YELLOW}Would you like to try the strict matching mode?${PLAIN}"
-                echo -e "  ${GREEN}1. Yes${PLAIN}"
-                echo -e "  ${GREEN}2. No${PLAIN}"
-                read -p "Please choose an option [1-2]: " ipChoice
-                if [[ $ipChoice == 1 ]]; then
-                    echo -e "${YELLOW}Initiating strict matching mode.${PLAIN}"
-                else
-                    echo -e "${RED}Exiting.${PLAIN}"
-                    exit 1
-                fi
-            fi
+        handleWARP
 
-            if [[ $domainIP == $ip ]]; then
+        # Get Domain Name
+        read -p "Enter the domain name for certificate application: " domain
+        [[ -z "$domain" ]] && { echo -e "${RED}No input detected. Exiting.${PLAIN}"; exit 1; }
+        echo -e "${GREEN}Domain confirmed: $domain${PLAIN}"
+        sleep 1
+
+        # Domain Resolution
+        resolveDomain() {
+            local domainIP=$(dig @8.8.8.8 +time=2 +short "$1" 2>/dev/null)
+            [[ -z $domainIP ]] && domainIP=$(dig @2001:4860:4860::8888 +time=2 aaaa +short "$1" 2>/dev/null)
+            echo $domainIP
+        }
+
+        domainIP=$(resolveDomain "$domain")
+
+        [[ -z $domainIP ]] && { echo -e "${RED}Domain name provided cannot be resolved${PLAIN}"; exit 1; }
+
+        # Certificate Generation
+        generateCertificate() {
             sudo $PACKAGE_MANAGER install -y curl wget sudo socat openssl
+            [[ $DISTRO = "CentOS" ]] && sudo $PACKAGE_MANAGER install -y cronie && systemctl start crond && systemctl enable crond
+            [[ $DISTRO != "CentOS" ]] && sudo $PACKAGE_MANAGER install -y cron && systemctl start cron && systemctl enable cron
 
-            if [[ $domainIP == $ip ]]; then
-            sudo $PACKAGE_MANAGER install -y curl wget sudo socat openssl
-            
-            if [ $DISTRO = "CentOS" ]; then
-              sudo $PACKAGE_MANAGER install -y cronie
-              systemctl start crond
-              systemctl enable crond  
-            else
-              sudo $PACKAGE_MANAGER install -y cron 
-              systemctl start cron
-              systemctl enable cron
+            curl https://get.acme.sh | sh -s email=$(date +%s%N | md5sum | cut -c 1-16)@gmail.com
+            source ~/.bashrc
+            bash ~/.acme.sh/acme.sh --upgrade --auto-upgrade
+            bash ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+            local issueCommand="bash ~/.acme.sh/acme.sh --issue -d ${1} --standalone -k ec-256 --insecure"
+            [[ -n $(echo $ip | grep ":") ]] && issueCommand+=" --listen-v6"
+            eval $issueCommand
+            bash ~/.acme.sh/acme.sh --install-cert -d ${1} --key-file /root/private.key --fullchain-file /root/cert.crt --ecc
+
+            if [[ -f $cert_path && -f $key_path ]] && [[ -s $cert_path && -s $key_path ]]; then
+                echo $1 > /root/ca.log
+                sed -i '/--cron/d' /etc/crontab >/dev/null 2>&1
+                echo "0 0 * * * root bash /root/.acme.sh/acme.sh --cron -f >/dev/null 2>&1" >> /etc/crontab
+                green "Certificate and key generated successfully and saved in /root directory."
+                yellow "Certificate path: $cert_path"
+                yellow "Key path: $key_path"
+                hy_domain=$1
             fi
-                curl https://get.acme.sh | sh -s email=$(date +%s%N | md5sum | cut -c 1-16)@gmail.com
-                source ~/.bashrc
-                bash ~/.acme.sh/acme.sh --upgrade --auto-upgrade
-                bash ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
-                if [[ -n $(echo $ip | grep ":") ]]; then
-                    bash ~/.acme.sh/acme.sh --issue -d ${domain} --standalone -k ec-256 --listen-v6 --insecure
-                else
-                    bash ~/.acme.sh/acme.sh --issue -d ${domain} --standalone -k ec-256 --insecure
-                fi
-                bash ~/.acme.sh/acme.sh --install-cert -d ${domain} --key-file /root/private.key --fullchain-file /root/cert.crt --ecc
-                if [[ -f /root/cert.crt && -f /root/private.key ]] && [[ -s /root/cert.crt && -s /root/private.key ]]; then
-                    echo $domain > /root/ca.log
-                    sed -i '/--cron/d' /etc/crontab >/dev/null 2>&1
-                    echo "0 0 * * * root bash /root/.acme.sh/acme.sh --cron -f >/dev/null 2>&1" >> /etc/crontab
-                    green "Certificate and key generated successfully and saved in /root directory."
-                    yellow "Certificate path: /root/cert.crt"
-                    yellow "Key path: /root/private.key"
-                    hy_domain=$domain
-                fi
-            else
-                red "Domain name provided cannot be resolved"
-                exit 1
-            fi
-        fi
+        }
+
+        [[ $domainIP == $ip ]] && generateCertificate "$domain" || { red "Domain name provided cannot be resolved"; exit 1; }
+    fi
+
     elif [[ $certInput == 3 ]]; then
         read -p "Enter public key (CRT) path: " cert_path
         yellow "Public key path: $cert_path"
