@@ -123,11 +123,20 @@ inst_cert() {
             [[ -z $domainIP ]] && domainIP=$(dig @2001:4860:4860::8888 +time=2 aaaa +short "$1" 2>/dev/null)
             echo $domainIP
         }
-
+        
         domainIP=$(resolveDomain "$domain")
-
+        
+        # If domainIP is still empty, use another method
+        if [[ -z $domainIP ]]; then
+            domainIP=$(curl -sm8 ipget.net/?ip="${domain}")
+            if [[ -z $domainIP || -n $(echo $domainIP | grep "nginx") ]]; then
+                domainIP=$(echo "$(nslookup $domain 2>&1)" | awk '{print $NF}')
+            fi
+        fi
+        
+        # If domainIP is still empty after all methods, exit with error
         [[ -z $domainIP ]] && { echo -e "${RED}Domain name provided cannot be resolved${PLAIN}"; exit 1; }
-
+        
         # Certificate Generation
         generateCertificate() {
             sudo $PACKAGE_MANAGER install -y curl wget sudo socat openssl
@@ -197,10 +206,10 @@ inst_port(){
 }
 
 inst_jump() {
-    green "Hysteria 2 Port Usage Mode:"
+    green "Hysteria 2 port usage mode:"
     echo ""
-    echo -e " ${GREEN}1.${PLAIN} Single Port Mode ${YELLOW}(DEFAULT)${PLAIN}"
-    echo -e " ${GREEN}2.${PLAIN} Port Range Hopping"
+    echo -e " ${GREEN}1.${PLAIN} Single port ${YELLOW}(DEFAULT)${PLAIN}"
+    echo -e " ${GREEN}2.${PLAIN} Port range hopping"
     echo ""
     read -rp "Option [1-2]: " jumpInput
     if [[ $jumpInput == 2 ]]; then
@@ -215,7 +224,7 @@ inst_jump() {
         ip6tables -t nat -A PREROUTING -p udp --dport $firstport:$endport  -j DNAT --to-destination :$port
         netfilter-persistent save >/dev/null 2>&1
     else
-        red "Continuing in single port mode."
+        red "Continuing in single port."
     fi
 }
 
@@ -250,13 +259,6 @@ insthysteria(){
     else
         realip
     fi
-
-    # if [ $DISTRO = "CentOS" ]; then
-    #   sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent netfilter-persistent
-    # else
-    #   sudo $PACKAGE_MANAGER update 
-    #   sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent netfilter-persistent
-    # fi
 
     if [ $DISTRO = "CentOS" ]; then
       sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent net-tools
