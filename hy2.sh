@@ -37,6 +37,11 @@ cyan(){
     echo -e "${CYAN}\033[01m$1${PLAIN}"
 }
 
+random_color() {
+  colors=("31" "32" "33" "34" "35" "36" "37")
+  echo -e "\e[${colors[$((RANDOM % 7))]}m$1\e[0m"
+}
+
 DISTRO=$(lsb_release -is)
 
 case $DISTRO in
@@ -190,12 +195,12 @@ inst_cert() {
 inst_port(){
     iptables -t nat -F PREROUTING >/dev/null 2>&1
 
-    read -p "SET Hysteria 2 PORT [1-65535] (DEFAULT FOR RANDOM): " port
+    read -p "Set Hysteria 2 port [1-65535] (default for random): " port
     [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
     until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
         if [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; then
-            echo -e "${RED} PORT $port ${PLAIN} IS ALREADY IN USED. PLEASE RETRY A DIFFERENT PORT"
-            read -p "SET Hysteria 2 PORT [1-65535] (DEFAULT FOR RANDOM): " port
+            echo -e "${RED} Port $port ${PLAIN} is already in used. Please retry a different port"
+            read -p "Set Hysteria 2 port [1-65535] (default for random): " port
             [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
         fi
     done
@@ -216,7 +221,7 @@ inst_jump() {
         read -p "Enter start port for range (recommended 10000-65535): " firstport
         read -p "Enter end port for range (must be greater than start port): " endport
         while [[ $firstport -ge $endport ]]; do
-            red "Start port must be less than end port. Please re-enter start and end ports."
+            red "Start port must be less than end port. Please retry start and end ports."
             read -p "Enter start port for range (recommended 10000-65535): " firstport
             read -p "Enter end port for range (recommended 10000-65535, must be greater than start port): " endport
         done
@@ -347,11 +352,11 @@ EOF
     fi
     blue "A faint clap of thunder, Clouded skies."
     green "Hysteria 2 installed successfully."
-    yellow "Hysteria 2 proxy share link (path: /root/hy/url.txt):"
+    yellow "General share link / Port-Hopping (path: /root/hy/url.txt):"
     red "$(cat /root/hy/url.txt)"
-    yellow "Hysteria 2 single port share link (path: /root/hy/url-nohop.txt):"
+    yellow "General share link / Single-Port (path: /root/hy/url-nohop.txt):"
     red "$(cat /root/hy/url-nohop.txt)"
-    yellow "Hysteria 2 proxy share info for SURGE (path: /root/hy/HY4SURGE.txt):"
+    yellow "SURGE (path: /root/hy/HY4SURGE.txt):"
     red "$(cat /root/hy/HY4SURGE.txt)"
 }
 
@@ -377,8 +382,8 @@ stophysteria(){
 }
 
 hysteriaswitch(){
-    light_purple "Perhaps rain comes."
-    light_purple "If so, will you stay here with me?"
+    random_color "Perhaps rain comes."
+    random_color "If so, will you stay here with me?"
     echo ""
     echo -e " ${GREEN}1.${PLAIN} Start"
     echo -e " ${GREEN}2.${PLAIN} Shutdown"
@@ -396,13 +401,13 @@ hysteriaswitch(){
 changeport(){
     oldport=$(cat /etc/hysteria/config.yaml 2>/dev/null | sed -n 1p | awk '{print $2}' | awk -F ":" '{print $2}')
     
-    read -p "ENTER Hysteria 2 PORT [1-65535] (PRESS ENTER FOR RANDOM PORT): " port
+    read -p "Enter Hysteria 2 port [1-65535] (default for random port): " port
     [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
 
     until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
         if [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; then
-            echo -e "${RED} PORT $port ${PLAIN} IS ALREADY IN USE BY ANOTHER APPLICATION. PLEASE CHOOSE A DIFFERENT PORT!"
-            read -p "SET Hysteria 2 PORT [1-65535] (PRESS ENTER FOR RANDOM PORT): " port
+            echo -e "${RED} Port $port ${PLAIN} is already in use. Please choose a different port!"
+            read -p "Set Hysteria 2 port [1-65535] (default for random port): " port
             [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
         fi
     done
@@ -412,15 +417,15 @@ changeport(){
 
     stophysteria && starthysteria
 
-    green "Port updated: $port"
+    green "port updated: $port"
     showconf
 }
 
 changepasswd(){
     oldpasswd=$(cat /etc/hysteria/config.yaml 2>/dev/null | sed -n 15p | awk '{print $2}')
 
-    read -p "ENTER Hysteria 2 PASSWORD (PRESS ENTER FOR RANDOM): " passwd
-    [[ -z $passwd ]] && passwd=$(date +%s%N | md5sum | cut -c 1-8)
+    read -p "Enter Hysteria 2 password (default for random): " passwd
+    [[ -z $passwd ]] && passwd=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c14)
 
     sed -i "1s#$oldpasswd#$passwd#g" /etc/hysteria/config.yaml
     sed -i "1s#$oldpasswd#$passwd#g" /root/hy/HY4SURGE.txt
@@ -444,7 +449,7 @@ change_cert(){
 
     stophysteria && starthysteria
 
-    green "Certificate updated"
+    green "certificate updated"
     showconf
 }
 
@@ -493,7 +498,7 @@ update_core(){
 
 menu() {
     clear
-    echo -e " ${LIGHT_PURPLE}Hysteria 2${PLAIN}"
+    echo -e " ${random_color}Hysteria 2${PLAIN}"
     echo ""
     echo -e " ${UNDERLINE_PURPLE}At what speed must i live, to be able to see you again?${PLAIN}"
     # echo " --------------------------------------------------------------------------------"
