@@ -44,32 +44,36 @@ random_color() {
 
 DISTRO=$(lsb_release -is)
 
+# 确定使用哪个包管理器
 case $DISTRO in
   Ubuntu|Debian)
     PACKAGE_MANAGER="apt"
-  ;;
+    ;;
   CentOS|RedHat|Fedora)
     PACKAGE_MANAGER="yum"
-  ;;
+    ;;
   *)
     echo "Unsupported distro"
     exit 1
-  ;;  
+    ;;  
 esac
 
-if ! command -v curl > /dev/null; then
-  sudo $PACKAGE_MANAGER update
-  sudo $PACKAGE_MANAGER install -y curl
-fi
+# 调用函数来安装软件包
+install_package "curl"
+install_package "net-tools"
+install_package "jq"
 
-if ! command -v netstat > /dev/null; then
-    sudo $PACKAGE_MANAGER install -y net-tools
-fi
+install_package() {
+    local package=$1
+    if ! command -v $package > /dev/null; then
+        echo "Installing $package..."
+        sudo $PACKAGE_MANAGER update
+        sudo $PACKAGE_MANAGER install -y $package
+    else
+        echo "$package is already installed."
+    fi
+}
 
-if ! command -v jq > /dev/null; then
-    sudo $PACKAGE_MANAGER update
-    sudo $PACKAGE_MANAGER install -y jq
-fi
 
 realip(){
     ip=$(curl -s4m8 ip.sb -k) || ip=$(curl -s6m8 ip.sb -k)
@@ -298,10 +302,13 @@ tls:
   key: $key_path
 
 quic:
-  initStreamReceiveWindow: 16777216
-  maxStreamReceiveWindow: 16777216
-  initConnReceiveWindow: 33554432
-  maxConnReceiveWindow: 33554432
+  initStreamReceiveWindow: 8388608 
+  maxStreamReceiveWindow: 8388608 
+  initConnReceiveWindow: 20971520 
+  maxConnReceiveWindow: 20971520 
+  maxIdleTimeout: 30s 
+  maxIncomingStreams: 1024 
+  disablePathMTUDiscovery: false 
 
 auth:
   type: password
@@ -339,7 +346,7 @@ EOF
     echo $url > /root/hy/url.txt
     nohopurl="hysteria2://$auth_pwd@$last_ip:$port/?insecure=1&sni=$hy_domain"
     echo $nohopurl > /root/hy/url-nohop.txt
-    surge_format="TEST HY2 = hysteria2, $last_ip, $last_port, password=$auth_pwd, sni=$hy_domain, download-bandwidth=1000, skip-cert-verify=true"
+    surge_format="🇺🇳 NodeName = hysteria2, $last_ip, $last_port, password=$auth_pwd, sni=$hy_domain, download-bandwidth=1000, skip-cert-verify=true"
     echo $surge_format > /root/hy/HY4SURGE.txt
 
     systemctl daemon-reload
@@ -352,12 +359,13 @@ EOF
     fi
     blue "A faint clap of thunder, Clouded skies."
     green "Hysteria 2 installed successfully."
-    yellow "General share link / Port-Hopping (path: /root/hy/url.txt):"
-    red "$(cat /root/hy/url.txt)"
-    yellow "General share link / Single-Port (path: /root/hy/url-nohop.txt):"
-    red "$(cat /root/hy/url-nohop.txt)"
-    yellow "SURGE (path: /root/hy/HY4SURGE.txt):"
-    red "$(cat /root/hy/HY4SURGE.txt)"
+    #yellow "General share link / Port-Hopping (path: /root/hy/url.txt):"
+    #red "$(cat /root/hy/url.txt)"
+    #yellow "General share link / Single-Port (path: /root/hy/url-nohop.txt):"
+    #red "$(cat /root/hy/url-nohop.txt)"
+    #cyan "SURGE (path: /root/hy/HY4SURGE.txt):"
+    cyan "Surge | Node is ready now."
+    cyan "$(cat /root/hy/HY4SURGE.txt)"
 }
 
 unsthysteria(){
