@@ -128,21 +128,21 @@ inst_cert() {
         # Domain Resolution
         
         resolveDomain() {
-            local domainIP=$(dig @8.8.8.8 +time=2 +short "$1" 2>/dev/null)
-            [[ -z $domainIP ]] && domainIP=$(dig @2001:4860:4860::8888 +time=2 aaaa +short "$1" 2>/dev/null)
-            echo $domainIP
-        }
-        
-        domainIP=$(resolveDomain "$domain")
-        
-        # If domainIP is still empty, use another method
-        if [[ -z $domainIP ]]; then
-            domainIP=$(curl -sm8 ipget.net/?ip="${domain}")
-            if [[ -z $domainIP || -n $(echo $domainIP | grep "nginx") ]]; then
-                domainIP=$(echo "$(nslookup $domain 2>&1)" | awk '{print $NF}')
-            fi
-        fi
-        
+        #     local domainIP=$(dig @8.8.8.8 +time=2 +short "$1" 2>/dev/null)
+        #     [[ -z $domainIP ]] && domainIP=$(dig @2001:4860:4860::8888 +time=2 aaaa +short "$1" 2>/dev/null)
+        #     echo $domainIP
+        # }
+        # 
+        # domainIP=$(resolveDomain "$domain")
+        # 
+        # # If domainIP is still empty, use another method
+        # if [[ -z $domainIP ]]; then
+        #     domainIP=$(curl -sm8 ipget.net/?ip="${domain}")
+        #     if [[ -z $domainIP || -n $(echo $domainIP | grep "nginx") ]]; then
+        #         domainIP=$(echo "$(nslookup $domain 2>&1)" | awk '{print $NF}')
+        #     fi
+        # fi
+        # 
         # If domainIP is still empty, use ip-api.com
         if [[ -z $domainIP ]]; then
             domainIP=$(curl -s "http://ip-api.com/json/${domain}" | jq -r '.query')
