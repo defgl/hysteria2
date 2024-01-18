@@ -58,11 +58,6 @@ case $DISTRO in
     ;;  
 esac
 
-# 调用函数来安装软件包
-install_package "curl"
-install_package "net-tools"
-install_package "jq"
-
 install_package() {
     local package=$1
     if ! command -v $package > /dev/null; then
@@ -73,6 +68,13 @@ install_package() {
         echo "$package is already installed."
     fi
 }
+
+# 调用函数来安装软件包
+install_package "curl"
+install_package "net-tools"
+install_package "jq"
+
+
 
 realip() { 
     ip=$(curl -s api.ipify.org) || ip=$(curl -s api64.ipify.org)
