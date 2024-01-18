@@ -232,7 +232,7 @@ inst_jump() {
 
 inst_pwd() {
     read -p "Enter password (default random): " auth_pwd
-    [[ -z $auth_pwd ]] && auth_pwd=$(date +%s%N | md5sum | cut -c 1-8)
+    [[ -z $auth_pwd ]] && auth_pwd=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 14)
     yellow "Confirmed: $auth_pwd"
 }
 
@@ -242,6 +242,14 @@ inst_site() {
     yellow "Confirmed: $proxysite"
 }
 
+inst_site() {
+    echo "Please enter the URL of the site you want to use for masquerading."
+    echo "Note: Do not include 'https://'. For example, if you want to use 'https://example.com', just enter 'example.com'."
+    echo "If you don't enter a site, 'www.playstation.com' will be used by default."
+    read -rp "Enter masquerade site URL: " proxysite
+    proxysite=${proxysite:-www.playstation.com}
+    green -e "Confirmed masquerade site: $proxysite"
+}
 
 insthysteria(){
 
