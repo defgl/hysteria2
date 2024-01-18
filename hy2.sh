@@ -74,9 +74,8 @@ install_package() {
     fi
 }
 
-
-realip(){
-    ip=$(curl -s4m8 ip.sb -k) || ip=$(curl -s6m8 ip.sb -k)
+realip() { 
+    ip=$(curl -s api.ipify.org) || ip=$(curl -s api64.ipify.org)
 }
 
 inst_cert() {
