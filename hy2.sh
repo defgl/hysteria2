@@ -346,7 +346,7 @@ EOF
     echo $url > /root/hy/url.txt
     nohopurl="hysteria2://$auth_pwd@$last_ip:$port/?insecure=1&sni=$hy_domain"
     echo $nohopurl > /root/hy/url-nohop.txt
-    surge_format="🇺🇳 NodeName = hysteria2, $last_ip, $last_port, password=$auth_pwd, sni=$hy_domain, download-bandwidth=1000, skip-cert-verify=true"
+    surge_format="NodeName = hysteria2, $last_ip, $last_port, password=$auth_pwd, sni=$hy_domain, download-bandwidth=1000, skip-cert-verify=true"
     echo $surge_format > /root/hy/HY4SURGE.txt
 
     systemctl daemon-reload
@@ -357,14 +357,20 @@ EOF
     else
         red "Hysteria 2 failed to start. Try 'systemctl status hysteria-server' for details. Exiting." && exit 1
     fi
+    echo ""
     blue "A faint clap of thunder, Clouded skies."
-    green "Hysteria 2 installed successfully."
+    blue "Perhaps rain comes."
+    #green "Hysteria 2 installed successfully."
     #yellow "General share link / Port-Hopping (path: /root/hy/url.txt):"
     #red "$(cat /root/hy/url.txt)"
     #yellow "General share link / Single-Port (path: /root/hy/url-nohop.txt):"
     #red "$(cat /root/hy/url-nohop.txt)"
     #cyan "SURGE (path: /root/hy/HY4SURGE.txt):"
-    cyan "Surge | Node is ready now."
+    #cyan "Proxy is ready."
+    #cyan "--- ___ ---"
+    cyan " ^_^ ^_^"
+    cyan "   ^_^  "
+    echo ""
     cyan "$(cat /root/hy/HY4SURGE.txt)"
 }
 
