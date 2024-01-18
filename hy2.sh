@@ -126,6 +126,7 @@ inst_cert() {
         sleep 1
 
         # Domain Resolution
+        
         resolveDomain() {
             local domainIP=$(dig @8.8.8.8 +time=2 +short "$1" 2>/dev/null)
             [[ -z $domainIP ]] && domainIP=$(dig @2001:4860:4860::8888 +time=2 aaaa +short "$1" 2>/dev/null)
@@ -142,9 +143,14 @@ inst_cert() {
             fi
         fi
         
+        # If domainIP is still empty, use ip-api.com
+        if [[ -z $domainIP ]]; then
+            domainIP=$(curl -s "http://ip-api.com/json/${domain}" | jq -r '.query')
+        fi
+        
         # If domainIP is still empty after all methods, exit with error
         [[ -z $domainIP ]] && { echo -e "${RED}Domain name provided cannot be resolved${PLAIN}"; exit 1; }
-        
+
         # Certificate Generation
         generateCertificate() {
             sudo $PACKAGE_MANAGER install -y curl wget sudo socat openssl
