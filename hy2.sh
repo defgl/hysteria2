@@ -235,12 +235,6 @@ inst_pwd() {
 }
 
 inst_site() {
-    read -rp "Enter masquerade site URL (omit https://) [default SEGA Japan]: " proxysite
-    [[ -z $proxysite ]] && proxysite="maimai.sega.jp"
-    yellow "Confirmed: $proxysite"
-}
-
-inst_site() {
     echo "Please enter the URL of the site you want to use for masquerading."
     echo "Note: Do not include 'https://'. For example, if you want to use 'https://example.com', just enter 'example.com'."
     echo "If you don't enter a site, 'www.playstation.com' will be used by default."
