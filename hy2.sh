@@ -74,8 +74,6 @@ install_package "curl"
 install_package "net-tools"
 install_package "jq"
 
-
-
 realip() { 
     ip=$(curl -s api.ipify.org) || ip=$(curl -s api64.ipify.org)
 }
@@ -369,6 +367,7 @@ EOF
     #cyan "SURGE (path: /root/hy/HY4SURGE.txt):"
     #cyan "Proxy is ready."
     #cyan "--- ___ ---"
+    echo ""
     cyan " ^_^ ^_^"
     cyan "   ^_^  "
     echo ""
