@@ -321,16 +321,11 @@ EOF
         last_port=$port
     fi
 
-    # Check if inst_cert is set to "echo -e " ${GREEN}1.${PLAIN} Use ACME (default)""
-    if [[ $certInput == 1 ]]; then
-        last_ip=$domain
+    # Add brackets to IPv6 addresses
+    if [[ -n $(echo $ip | grep ":") ]]; then
+        last_ip="[$ip]"
     else
-        # Add brackets to IPv6 addresses
-        if [[ -n $(echo $ip | grep ":") ]]; then
-            last_ip="[$ip]"
-        else
-            last_ip=$ip
-        fi
+        last_ip=$ip
     fi
 
     mkdir /root/hy
