@@ -192,14 +192,15 @@ inst_port(){
 
     read -p "Set Hysteria 2 port [1-65535] (default for random): " port
     [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
-    until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
-        if [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; then
+    while [[ $port -lt 1 || $port -gt 65535 || -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
+        if [[ $port -lt 1 || $port -gt 65535 ]]; then
+            echo -e "${RED} Port $port ${PLAIN} is not in the range 1-65535. Please retry a different port"
+        elif [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; then
             echo -e "${RED} Port $port ${PLAIN} is already in used. Please retry a different port"
-            read -p "Set Hysteria 2 port [1-65535] (default for random): " port
-            [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
         fi
+        read -p "Set Hysteria 2 port [1-65535] (default for random): " port
+        [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
     done
-
 
     yellow "Confirmed:$port"
     inst_jump
@@ -407,12 +408,14 @@ changeport(){
     read -p "Enter Hysteria 2 port [1-65535] (default for random port): " port
     [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
 
-    until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
-        if [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; then
+    while [[ $port -lt 1 || $port -gt 65535 || -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
+        if [[ $port -lt 1 || $port -gt 65535 ]]; then
+            echo -e "${RED} Port $port ${PLAIN} is not in the range 1-65535. Please retry a different port"
+        elif [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; then
             echo -e "${RED} Port $port ${PLAIN} is already in use. Please choose a different port!"
-            read -p "Set Hysteria 2 port [1-65535] (default for random port): " port
-            [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
         fi
+        read -p "Set Hysteria 2 port [1-65535] (default for random port): " port
+        [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
     done
 
     sed -i "1s#$oldport#$port#g" /etc/hysteria/config.yaml
