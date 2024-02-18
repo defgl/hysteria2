@@ -60,7 +60,11 @@ esac
 
 install_package() {
     local package=$1
-    if ! command -v $package > /dev/null; then
+    local check_command=$2
+    if [ -z "$check_command" ]; then
+        check_command=$package
+    fi
+    if ! command -v $check_command > /dev/null; then
         echo "Installing $package..."
         sudo $PACKAGE_MANAGER update
         sudo $PACKAGE_MANAGER install -y $package
@@ -71,7 +75,7 @@ install_package() {
 
 # 调用函数来安装软件包
 install_package "curl"
-install_package "net-tools"
+install_package "net-tools" "ifconfig"
 install_package "jq"
 
 realip() { 
