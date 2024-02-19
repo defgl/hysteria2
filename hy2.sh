@@ -42,9 +42,38 @@ random_color() {
   echo -e "\e[${colors[$((RANDOM % 7))]}m$1\e[0m"
 }
 
-DISTRO=$(lsb_release -is)
+# 定义一个包含所有要安装的软件包的数组
+# 对于需要特殊检查命令的软件包，使用 "包名:检查命令" 的格式
+packages=("curl" "net-tools:ifconfig" "jq")
+
+install_packages() {
+    # 更新软件源一次
+    echo "Updating software repositories..."
+    sudo $PACKAGE_MANAGER update
+
+    local package check_command
+    for item in "$@"; do  # 使用"$@"来接收传递给函数的所有参数
+        # 如果软件包定义中包含 ":", 则拆分为包名和检查命令
+        if [[ $item == *":"* ]]; then
+            IFS=":" read -r package check_command <<< "$item"
+        else
+            package=$item
+            check_command=$item
+        fi
+
+        if ! command -v $check_command > /dev/null; then
+            echo "Installing $package..."
+            sudo $PACKAGE_MANAGER install -y $package
+        else
+            echo "$package is already installed."
+        fi
+    done
+}
+
+
 
 # 确定使用哪个包管理器
+DISTRO=$(lsb_release -is)
 case $DISTRO in
   Ubuntu|Debian)
     PACKAGE_MANAGER="apt"
@@ -58,36 +87,21 @@ case $DISTRO in
     ;;  
 esac
 
-install_package() {
-    local package=$1
-    local check_command=$2
-    if [ -z "$check_command" ]; then
-        check_command=$package
-    fi
-    if ! command -v $check_command > /dev/null; then
-        echo "Installing $package..."
-        sudo $PACKAGE_MANAGER update
-        sudo $PACKAGE_MANAGER install -y $package
-    else
-        echo "$package is already installed."
-    fi
-}
+# 调用函数来安装所有软件包
+install_packages
 
-# 调用函数来安装软件包
-install_package "curl"
-install_package "net-tools" "ifconfig"
-install_package "jq"
-
+# 实际的 IP 地址获取函数
 realip() { 
     ip=$(curl -s api.ipify.org) || ip=$(curl -s api64.ipify.org)
 }
 
+# 证书申请函数
 inst_cert() {
-    green "Select certificate application method:"
+    echo "Select certificate application method:"
     echo ""
-    echo -e " ${GREEN}1.${PLAIN} Use ACME (default)"
-    echo -e " ${GREEN}2.${PLAIN} Generate OpenSSL pseudo-certificate"
-    echo -e " ${GREEN}3.${PLAIN} Use custom certificate"
+    echo "1. Use ACME (default)"
+    echo "2. Generate OpenSSL pseudo-certificate"
+    echo "3. Use custom certificate"
     echo ""
     read -rp "Option [1-3]: " certInput
 
@@ -95,101 +109,88 @@ inst_cert() {
         certInput=1
     fi
 
-   if [[ $certInput == 1 ]]; then
-    cert_path="/root/cert.crt"
-    key_path="/root/private.key"
-    chmod -R 777 /root
+    if [[ $certInput == 1 ]]; then
+        cert_path="/root/cert.crt"
+        key_path="/root/private.key"
+        chmod -R 777 /root
 
-    # Check for existing certificate and keys
-    if [[ -f $cert_path && -f $key_path ]] && [[ -s $cert_path && -s $key_path ]] && [[ -f /root/ca.log ]]; then
-        domain=$(cat /root/ca.log)
-        green "Existing certificate detected for domain: $domain, applying"
-        hy_domain=$domain
-    else
-        # Handle WARP status
-        handleWARP() {
-            local WARPv4Status=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-            local WARPv6Status=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-            if [[ $WARPv4Status =~ on|plus ]] || [[ $WARPv6Status =~ on|plus ]]; then
-                wg-quick down wgcf >/dev/null 2>&1
-                systemctl stop warp-go >/dev/null 2>&1
-                realip
-                wg-quick up wgcf >/dev/null 2>&1
-                systemctl start warp-go >/dev/null 2>&1
-            else
-                realip
-            fi
-        }
+        # 获取实际的IP地址
+        realip
 
-        handleWARP
-
-        # Get Domain Name
+        # 域名输入和确认
         read -p "Enter the domain name for certificate application: " domain
-        [[ -z "$domain" ]] && { echo -e "${RED}No input detected. Exiting.${PLAIN}"; exit 1; }
-        echo -e "${GREEN}Domain confirmed: $domain${PLAIN}"
+        [[ -z "$domain" ]] && { echo "No input detected. Exiting."; exit 1; }
+        echo "Domain confirmed: $domain"
         sleep 1
 
-        # Domain Resolution
-        
-        resolveDomain() {
-            local domainIP=$(curl -s "http://ip-api.com/json/${1}" | jq -r '.query')
-            echo $domainIP
-        }
-        
-        domainIP=$(resolveDomain "$domain")
-        
-        # If domainIP is still empty after all methods, exit with error
-        [[ -z $domainIP ]] && { echo -e "${RED}Domain name provided cannot be resolved${PLAIN}"; exit 1; }
-        
-        # Certificate Generation
-        generateCertificate() {
-            sudo $PACKAGE_MANAGER install -y curl wget sudo socat openssl
-            [[ $DISTRO = "CentOS" ]] && sudo $PACKAGE_MANAGER install -y cronie && systemctl start crond && systemctl enable crond
-            [[ $DISTRO != "CentOS" ]] && sudo $PACKAGE_MANAGER install -y cron && systemctl start cron && systemctl enable cron
+        # 域名解析验证
+        domainIP=$(curl -s "http://ip-api.com/json/${domain}" | jq -r '.query')
+        if [[ -z $domainIP ]]; then
+            echo "Domain name provided cannot be resolved. Exiting."
+            exit 1
+        fi
 
-            curl https://get.acme.sh | sh -s email=$(date +%s%N | md5sum | cut -c 1-16)@gmail.com
-            source ~/.bashrc
-            bash ~/.acme.sh/acme.sh --upgrade --auto-upgrade
-            bash ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
-            local issueCommand="bash ~/.acme.sh/acme.sh --issue -d ${1} --standalone -k ec-256 --insecure"
-            [[ -n $(echo $ip | grep ":") ]] && issueCommand+=" --listen-v6"
-            eval $issueCommand
-            bash ~/.acme.sh/acme.sh --install-cert -d ${1} --key-file /root/private.key --fullchain-file /root/cert.crt --ecc
+        # 根据系统动态添加cron软件包
+        local additional_packages=("curl" "wget" "socat" "openssl" "qrencode" "procps")
+        if [[ "$DISTRO" == "CentOS" || "$DISTRO" == "Fedora" ]]; then
+            additional_packages+=("cronie")  # CentOS/Fedora 使用 cronie
+        else
+            additional_packages+=("cron")  # Debian/Ubuntu 使用 cron
+        fi
+    
+        # 动态安装所有必需软件包
+        install_packages "${additional_packages[@]}"
 
-            if [[ -f $cert_path && -f $key_path ]] && [[ -s $cert_path && -s $key_path ]]; then
-                echo $1 > /root/ca.log
-                sed -i '/--cron/d' /etc/crontab >/dev/null 2>&1
-                echo "0 0 * * * root bash /root/.acme.sh/acme.sh --cron -f >/dev/null 2>&1" >> /etc/crontab
-                green "Certificate and key generated successfully and saved in /root directory."
-                yellow "Certificate path: $cert_path"
-                yellow "Key path: $key_path"
-                hy_domain=$1
-            fi
-        }
+        # Acme 证书申请逻辑
+        curl https://get.acme.sh | sh
+        source ~/.bashrc || source ~/.profile
+        ~/.acme.sh/acme.sh --upgrade --auto-upgrade
+        ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 
-        [[ $domainIP == $ip ]] && generateCertificate "$domain" || { red "Domain name provided cannot be resolved"; exit 1; }
-    fi
+        if [[ -n $(echo $ip | grep ":") ]]; then
+            ~/.acme.sh/acme.sh --issue -d $domain --standalone -k ec-256 --listen-v6 --insecure
+        else
+            ~/.acme.sh/acme.sh --issue -d $domain --standalone -k ec-256 --insecure
+        fi
+
+        ~/.acme.sh/acme.sh --install-cert -d $domain --key-file $key_path --fullchain-file $cert_path --ecc
+
+        if [[ -f $cert_path && -f $key_path ]] && [[ -s $cert_path && -s $key_path ]]; then
+            echo $domain > /root/ca.log
+            # 添加自动续期的Cron任务
+            (crontab -l 2>/dev/null; echo "0 0 * * * ~/.acme.sh/acme.sh --cron --home ~/.acme.sh > /dev/null") | crontab -
+            echo "Certificate and key generated successfully and saved in /root directory."
+            echo "Certificate path: $cert_path"
+            echo "Key path: $key_path"
+            hy_domain=$domain
+        else
+            echo "Failed to issue certificate."
+            exit 1
+        fi
 
     elif [[ $certInput == 3 ]]; then
+        # 自定义证书逻辑
         read -p "Enter public key (CRT) path: " cert_path
-        yellow "Public key path: $cert_path"
+        echo "Public key path: $cert_path"
         read -p "Enter private key (KEY) path: " key_path
-        yellow "Private key path: $key_path"
+        echo "Private key path: $key_path"
         read -p "Enter certificate domain: " domain
-        yellow "Certificate domain: $domain"
+        echo "Certificate domain: $domain"
         hy_domain=$domain
     else
-        green "Using self-signed certificate (OpenSSL)"
+        # OpenSSL 伪证书生成逻辑
         cert_path="/etc/hysteria/cert.crt"
         key_path="/etc/hysteria/private.key"
-        openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
-        openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
-        chmod 777 /etc/hysteria/cert.crt
-        chmod 777 /etc/hysteria/private.key
-        hy_domain="www.bing.com"
-        domain="www.bing.com"
+        openssl ecparam -genkey -name prime256v1 -out $key_path
+        openssl req -new -x509 -days 36500 -key $key_path -out $cert_path -subj "/CN=$domain"
+        echo "Self-signed certificate and key generated successfully."
+        echo "Certificate path: $cert_path"
+        echo "Key path: $key_path"
+        hy_domain="www.example.com"
+        domain="www.example.com"
     fi
 }
+
 
 inst_port(){
     iptables -t nat -F PREROUTING >/dev/null 2>&1
@@ -267,12 +268,20 @@ insthysteria(){
         realip
     fi
 
-    if [ $DISTRO = "CentOS" ]; then
-      sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent net-tools
-    else
-      sudo $PACKAGE_MANAGER update
-      sudo $PACKAGE_MANAGER install -y curl wget sudo qrencode procps iptables-persistent net-tools  
+        # 构建基础软件包列表
+    local packages=("curl" "wget" "socat" "openssl" "qrencode" "procps" "net-tools")
+
+    # 对于特定发行版，添加特定的软件包
+    if [[ "$DISTRO" == "Ubuntu" || "$DISTRO" == "Debian" ]]; then
+        packages+=("iptables-persistent" "netfilter-persistent")
+    elif [[ "$DISTRO" == "CentOS" || "$DISTRO" == "Fedora" ]]; then
+        # CentOS, Fedora 或其他RHEL系列发行版特定的包处理（如果有）
+        # 注意: CentOS/Fedora 通常使用 firewalld，可能不需要 iptables-persistent 等包
+        echo "No additional packages required for $DISTRO"
     fi
+
+        # 使用动态软件包列表安装软件包
+    install_packages "${packages[@]}"
 
 
     # Install Hysteria 2
@@ -300,13 +309,10 @@ tls:
   key: $key_path
 
 quic:
-  initStreamReceiveWindow: 8388608 
-  maxStreamReceiveWindow: 8388608 
-  initConnReceiveWindow: 20971520 
-  maxConnReceiveWindow: 20971520 
-  maxIdleTimeout: 30s 
-  maxIncomingStreams: 1024 
-  disablePathMTUDiscovery: false 
+  initStreamReceiveWindow: 16777216 
+  maxStreamReceiveWindow: 16777216 
+  initConnReceiveWindow: 33554432 
+  maxConnReceiveWindow: 33554432 
 
 auth:
   type: password
