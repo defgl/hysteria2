@@ -439,18 +439,16 @@ changecert() {
 
 menu() {
     clear
-    echo -e "${random_color}Hysteria 2${reset}"
+    echo -e "${cyan}Hysteria 2${reset}"
     echo "----------------------------------------------------------------------------------"
-    echo -e "${random_color}                At what speed must i live, to be able to see you again?${reset}"
+    echo -e "${cyan}At what speed must I live, to be able to see you again?${reset}"
     echo "----------------------------------------------------------------------------------"
     echo -e " ${green}1.${reset} Install"
     echo -e " ${red}2.${reset} Uninstall"
-    echo ""
-    echo -e " ${yellow}3.${reset} Mange"
-    echo ""
+    echo -e " ${yellow}3.${reset} Manage"
     echo -e " ${purple}0.${reset} Exit"
     echo ""
-    read -rp "Option [0-6]: " menuInput
+    read -rp "Option [0-3]: " menuInput
     case $menuInput in
         1) install ;;
         2) uninstall ;;
@@ -458,10 +456,8 @@ menu() {
         0) exit 0 ;;
         *) 
             echo "Invalid option. Please try again."
-            menu
-            ;;
+            menu ;;
     esac
 }
-
 
 menu
