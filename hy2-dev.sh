@@ -53,9 +53,18 @@ random_color() {
 
 # Check for root privileges and system compatibility
 setup_environment() {
-    [[ $EUID -ne 0 ]] && msg err "Root clearance required." && exit 1
-    cmd=$(type -P apt-get || type -P yum) || msg err "Unsupported package manager. This script only supports apt-get (Debian/Ubuntu) and yum (CentOS/RHEL)." && exit 1
-    [[ ! $(type -P systemctl) ]] && msg err "Systemd is required." && exit 1
+    if [[ $EUID -ne 0 ]]; then
+        msg err "Root clearance required."
+        return 1 # Use return instead of exit
+    fi
+    if ! type -P apt-get &>/dev/null && ! type -P yum &>/dev/null; then
+        msg err "Unsupported package manager. This script only supports apt-get (Debian/Ubuntu) and yum (CentOS/RHEL)."
+        return 1
+    fi
+    if [[ -z $(type -P systemctl) ]]; then
+        msg err "Systemd is required."
+        return 1
+    fi
 }
 
 fullchain="/root/cert/fullchain.pem"
