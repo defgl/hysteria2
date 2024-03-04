@@ -108,7 +108,6 @@ is_port_used() {
     fi
 }
 
-
 # Generate a random password
 generate_random_password() {
     local length=${1:-16} # Default length 16 if not specified
@@ -225,49 +224,54 @@ EOF
 install() {
     setup_environment
     install_dependencies
+
+    # 创建配置
     create_config
 
-    # Install Hysteria 2
+    # 安装 Hysteria 2
     bash <(curl -fsSL https://get.hy2.sh/)
 
     if [[ -f "/usr/local/bin/hysteria" ]]; then
-        green "Installation successful."
+        _green "Installation successful."
     else
-        red "Installation failed."
+        _red "Installation failed."
         exit 1
     fi
 
+    mkdir -p /root/hy
 
+    # 生成 Surge 配置格式的节点信息
+    get_ip  # 更新此函数以获取并处理 $ipv4 和 $ipv6
+    local port=$(jq -r '.listen' /etc/hysteria/config.json | cut -d':' -f2)
+    local password=$(jq -r '.auth.password' /etc/hysteria/config.json)
+    local sni=$(jq -r '.obfs' /etc/hysteria/config.json)
 
-    fi
-
-        fi
-    fi
-
-    mkdir /root/hy
+    # 确保这里使用正确的 IP 地址或域名
+    local ip_or_domain="适当的逻辑来确定使用 $ipv4 或 $domain"
     
-    surge_format="NodeName = hysteria2, $last_ip, $last_port, password=$auth_pwd, sni=$hy_domain, download-bandwidth=1000, skip-cert-verify=true"
-    echo $surge_format > /root/hy/proxy
+    surge_format="Proxy-HY2 = hysteria2, $ip_or_domain, $port, password=$password, sni=$sni, download-bandwidth=1000, skip-cert-verify=true"
+    echo "$surge_format" > /root/hy/proxy-surge.ini
 
     systemctl daemon-reload
     systemctl enable hysteria-server
     systemctl start hysteria-server
-    if [[ -n $(systemctl status hysteria-server 2>/dev/null | grep -w active) && -f '/etc/hysteria/config.yaml' ]]; then
-        green "Hysteria 2 started successfully."
+
+    if systemctl is-active --quiet hysteria-server; then
+        _green "Hysteria 2 started successfully."
+        echo ""
+        _blue "A faint clap of thunder, Clouded skies."
+        _blue "Perhaps rain comes."
+        echo ""
+        _cyan " ^_^ ^_^"
+        _cyan "   ^_^  "
+        echo ""
+        _cyan "$(cat /root/hy/proxy-surge.ini)"
     else
-        red "Hysteria 2 failed to start. Try 'systemctl status hysteria-server' for details. Exiting." && exit 1
+        _red "Hysteria 2 failed to start. Try 'systemctl status hysteria-server' for details. Exiting."
+        exit 1
     fi
-    echo ""
-    blue "A faint clap of thunder, Clouded skies."
-    blue "Perhaps rain comes."
-    #cyan "Proxy is ready."
-    #cyan "--- ___ ---"
-    echo ""
-    cyan " ^_^ ^_^"
-    cyan "   ^_^  "
-    echo ""
-    cyan "$(cat /root/hy/proxy-surge.ini)"
 }
+
 
 uninstall(){
     systemctl stop hysteria-server.service >/dev/null 2>&1
