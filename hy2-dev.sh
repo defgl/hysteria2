@@ -78,10 +78,10 @@ install_dependencies() {
     local dependencies=("wget" "unzip" "jq" "net-tools" "socat" "curl" "cron" "dnsutils")
     for pkg in "${dependencies[@]}"; do
         if ! command -v $pkg &>/dev/null; then
-            msg info "Installing $pkg..."
+            _green "Installing $pkg..."
             $cmd install -y $pkg
         else
-            msg info "$pkg is already installed."
+            _yellow "$pkg is already installed."
         fi
     done
 }
