@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export LANG=en_US.UTF-8
-
 # Define color codes
 red='\e[31m'
 green='\e[92m'
