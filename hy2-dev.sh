@@ -229,11 +229,8 @@ EOF
     msg ok "Configuration created successfully."
 }
 
-
-
-
 # Hysteria installation, uninstallation, and management functions
-instal l() {
+install() {
     setup_environment
     install_dependencies
     create_config
