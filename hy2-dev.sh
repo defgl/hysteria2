@@ -66,11 +66,11 @@ hysteria_service="hysteria-server"
 # Install missing packages
 install_dependencies() {
     msg info "Checking and installing missing dependencies..."
-    local dependencies=("wget" "unzip" "jq" "net-tools" "socat" "curl" "cron" "dnsutils" "bind-utils")
+    local dependencies=("wget" "unzip" "jq" "net-tools" "socat" "curl" "cron" "dnsutils")
     for pkg in "${dependencies[@]}"; do
         if ! command -v $pkg &>/dev/null; then
             msg info "Installing $pkg..."
-            sudo $cmd install -y $pkg
+            $cmd install -y $pkg
         else
             msg info "$pkg is already installed."
         fi
@@ -100,22 +100,14 @@ check_domain() {
 
 # Corrected 'is_port_used' function to properly check port usage
 is_port_used() {
-    if [[ $(type -P netstat) ]]; then
-        is_used_port="$(netstat -tunlp | awk '/^tcp/ {print $4}' | cut -d: -f2)"
-    elif [[ $(type -P ss) ]]; then
-        is_used_port="$(ss -tunlp | awk '/^tcp/ {print $5}' | cut -d: -f2)"
-    else
-        is_cant_test_port=1
-        msg warn "Unable to check if the port is available."
-        return 1 # Indicating failure to check port
-    fi
-
-    if echo "$is_used_port" | grep -qw "^${1}$"; then
+    local port=$1
+    if ss -tuln | grep -q ":${port} "; then
         return 0 # Port is used
     else
         return 1 # Port is not used
     fi
 }
+
 
 # Generate a random password
 generate_random_password() {
