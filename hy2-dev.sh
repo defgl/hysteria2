@@ -74,16 +74,18 @@ hysteria_service="hysteria-server"
 
 # Install missing packages
 install_dependencies() {
-    msg info "Checking and installing missing dependencies..."
+    _yellow "Checking and installing missing dependencies..."
     local dependencies=("wget" "unzip" "jq" "net-tools" "socat" "curl" "cron" "dnsutils")
-    for pkg in "${dependencies[@]}"; do
-        if ! command -v $pkg &>/dev/null; then
-            _green "Installing $pkg..."
-            $cmd install -y $pkg
-        else
-            _yellow "$pkg is already installed."
-        fi
-    done
+    if command -v apt-get &>/dev/null; then
+        apt-get update -y
+        apt-get install -y dnsutils ${dependencies[@]}
+    elif command -v yum &>/dev/null; then
+        yum makecache fast
+        yum install -y bind-utils ${dependencies[@]}
+    else
+        msg err "Unsupported package manager. Script supports apt-get (Debian/Ubuntu) and yum (CentOS/RHEL)."
+        exit 1
+    fi
 }
 
 # Function to get the public IP of the server
