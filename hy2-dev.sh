@@ -78,17 +78,9 @@ install_dependencies() {
     if command -v apt-get &>/dev/null; then
         apt-get update -y
         apt-get install -y dnsutils ${dependencies[@]}
-        if ! command -v yq &>/dev/null; then
-            apt-get install -y python3-pip
-            pip3 install yq
-        fi
     elif command -v yum &>/dev/null; then
         yum makecache fast
         yum install -y bind-utils ${dependencies[@]}
-        if ! command -v yq &>/dev/null; then
-            yum install -y python3-pip
-            pip3 install yq
-        fi
     else
         msg err "Unsupported package manager. Script supports apt-get (Debian/Ubuntu) and yum (CentOS/RHEL)."
         exit 1
