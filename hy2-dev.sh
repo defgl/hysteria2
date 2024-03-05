@@ -165,6 +165,7 @@ apply_cert() {
     local method=${2:-"acme"} # 默认使用ACME方法
     local cert_dir="/root/cert/$domain" # 为每个域名指定一个证书存储目录
     
+    
     mkdir -p "$cert_dir" # 创建证书存储目录
 
     if [[ "$method" == "acme" ]]; then
@@ -173,7 +174,7 @@ apply_cert() {
             echo "Installing acme.sh..."
             curl https://get.acme.sh | sh
         fi
-        ~/.acme.sh/acme.sh --issue --force --ecc --standalone -d $domain --keylength ec-256 --server letsencrypt
+        ~/.acme.sh/acme.sh --issue --force --ecc --standalone -d "$domain" --keylength ec-256 --server letsencrypt
         ~/.acme.sh/acme.sh --install-cert -d $domain --ecc \
             --fullchain-file "$cert_dir/fullchain.pem" \
             --key-file "$cert_dir/private.key"
