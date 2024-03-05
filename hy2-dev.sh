@@ -68,13 +68,13 @@ setup_environment() {
 fullchain="/root/cert/fullchain.pem"
 privatekey="/root/cert/private.key"
 workspace="/etc/hysteria"
-service="/etc/systemd/system/hysteria.service"
-config="$workspace/config.json"
+service="/etc/systemd/system/hysteria"
+config="$workspace/config.yaml"
 
 # Install missing packages
 install_dependencies() {
     _yellow "Checking and installing missing dependencies..."
-    local dependencies=("wget" "unzip" "jq" "net-tools" "socat" "curl" "cron" "dnsutils")
+    local dependencies=("wget" "unzip" "jq" "yq" "net-tools" "socat" "curl" "cron" "dnsutils")
     if command -v apt-get &>/dev/null; then
         apt-get update -y
         apt-get install -y dnsutils ${dependencies[@]}
@@ -142,6 +142,20 @@ find_unused_port() {
     echo $port
 }
 
+port_hopping() {
+    read -p "Enter start port for range (recommended 10000-65535): " firstport
+    read -p "Enter end port for range (must be greater than start port): " endport
+    while [[ $firstport -ge $endport ]]; do
+        red "Start port must be less than end port. Please retry start and end ports."
+        read -p "Enter start port for range (recommended 10000-65535): " firstport
+        read -p "Enter end port for range (recommended 10000-65535, must be greater than start port): " endport
+    done
+    iptables -t nat -A PREROUTING -p udp --dport $firstport:$endport -j DNAT --to-destination :$port
+    ip6tables -t nat -A PREROUTING -p udp --dport $firstport:$endport -j DNAT --to-destination :$port
+    netfilter-persistent save >/dev/null 2>&1
+    last_port="$port,$firstport-$endport"
+}
+
 check_cert() {
     local domain=$1
     if ~/.acme.sh/acme.sh --list | grep -q $domain; then
@@ -162,51 +176,45 @@ check_cert() {
 
 apply_cert() {
     local domain=$1
-    local method=${2:-"acme"} # 默认使用 ACME 方法
-    local cert_dir="/root/cert/$domain" # 为每个域名指定一个证书存储目录
-
-    # 确保域名非空
-    if [[ -z "$domain" ]]; then
+    if [ -z "$domain" ]; then
         msg err "Domain name is required."
         return 1
     fi
 
-    mkdir -p "$cert_dir" # 创建证书存储目录
+    local method=${2:-"acme"} # 默认使用 ACME 方法
+    local cert_dir="$cert_dir/$domain" # 为每个域名指定一个证书存储目录
 
+    if [ ! -d "$cert_dir" ]; then
+        mkdir -p "$cert_dir" # 创建证书存储目录
+    fi
+
+    if [ ! -f "/root/.acme.sh/acme.sh" ]; then
+        echo "Installing acme.sh..."
+        curl https://get.acme.sh | sh
+    fi
+
+    echo "Applying for an ACME certificate for $domain..."
     if [[ "$method" == "acme" ]]; then
-        echo "Applying for an ACME certificate for $domain..."
-        if [ ! -f "/root/.acme.sh/acme.sh" ]; then
-            echo "Installing acme.sh..."
-            curl https://get.acme.sh | sh
-        fi
-
-        # 注意：已移除 --ecc 参数，确保使用正确的参数格式
         ~/.acme.sh/acme.sh --issue --force --standalone -d "$domain" --keylength ec-256 --server letsencrypt
-
-        if [[ $? -ne 0 ]]; then
+        if [ $? -ne 0 ]; then
             msg err "Failed to issue certificate for $domain."
             return 1
         fi
 
-        ~/.acme.sh/acme.sh --install-cert -d "$domain" \
+        ~/.acme.sh/acme.sh --install-cert -d "$domain" --ecc \
             --fullchain-file "$cert_dir/fullchain.pem" \
             --key-file "$cert_dir/private.key"
-
-        echo "ACME certificate applied for $domain."
-    elif [[ "$method" == "openssl" ]]; then
-        echo "Generating an OpenSSL certificate for $domain..."
-        openssl req -newkey rsa:2048 -nodes -keyout "$cert_dir/private.key" \
-            -x509 -days 365 -out "$cert_dir/fullchain.pem" -subj "/CN=$domain"
-        echo "OpenSSL certificate generated for $domain."
+        msg ok "ACME certificate applied for $domain."
+    else
+        msg err "Unsupported method for applying certificate."
+        return 1
     fi
 
-    # 更新证书路径变量，移除路径中的多余斜杠
     fullchain="$cert_dir/fullchain.pem"
-    privatekey="$cert_dir/private.key"
-    echo "Certificate path: $fullchain"
-    echo "Key path: $privatekey"
+    private_key="$cert_dir/private.key"
+    msg ok "Certificate path: $fullchain"
+    msg ok "Key path: $private_key"
 }
-
 
 update_cert() {
     local domain=$1
@@ -250,34 +258,60 @@ EOF
 
 # Configuration creation including domain, port, password, and masquerade site
 create_config() {
+    is_port_used 80
     read -rp "Drop your domain name here: " domain
     check_domain "$domain"
 
-    local port=$(find_unused_port)
-    local auth_password=$(generate_random_password 16)
-    local proxy_site="www.example.com"
+    read -rp "Enter the port (leave blank for random): " port
+    if [[ -z $port ]]; then
+        port=$(find_unused_port)
+    fi
+
+    check_cert "$domain"
+
+    read -rp "Enter the password (leave blank for random): " auth_password
+    if [[ -z $auth_password ]]; then
+        auth_password=$(generate_random_password 16)
+    fi
+
+    read -rp "Enter the masquerade site (leave blank for www.playstation.com): " proxy_site
+    if [[ -z $proxy_site ]]; then
+        proxy_site="www.playstation.com"
+    fi
+
+    read -rp "Do you want to enable Port Hopping? (Enter 'yes' to enable, leave blank for 'no'): " enableHopping
+    if [[ $enableHopping == "yes" ]]; then
+        port_hopping
+    else
+        last_port=$port
+    fi
 
     cat <<EOF > $config
-{
-  "listen": ":$port",
-  "tls": {
-    "cert": "$fullchain",
-    "key": "$privatekey"
-  },
-  "auth": {
-    "type": "password",
-    "password": "$auth_password"
-  },
-  "obfs": "$proxy_site"
-}
+listen: :$port
+tls:
+  cert: $fullchain
+  key: $privatekey
+auth:
+  type: password
+  password: $auth_password
+masquerade:
+  type: proxy
+  proxy:
+    url: https://$proxy_site
+  rewriteHost: true
 EOF
 
     msg ok "Configuration created successfully."
+
+    # Add brackets to IPv6 addresses
+    if [[ -n $(echo $final_ip | grep ":") ]]; then
+        final_ip="[$final_ip]"
+    fi
+
     cat > "$workspace/proxy_surge.ini" << EOF
-    Proxy-HY = hysteria, $domain, $port, password=$auth_password, sni=$proxy_site
+Proxy-HY = hysteria, $final_ip, $last_port, password=$auth_password, sni=$proxy_site
 EOF
 }
-
 
 # Hysteria installation, uninstallation, and management functions
 install() {
@@ -298,7 +332,6 @@ install() {
     }
 
     mkdir -p "$workspace"
-    check_cert "$domain"
 
     create_systemd
     create_config
@@ -312,23 +345,33 @@ install() {
 }
 
 
-
 uninstall(){
-    systemctl stop hysteria.service >/dev/null 2>&1
-    systemctl disable hysteria.service >/dev/null 2>&1
+    # Stop and disable the service
+    systemctl stop hysteria >/dev/null 2>&1
+    systemctl disable hysteria >/dev/null 2>&1
+
+    # Remove the service and hysteria files
     rm -f $service
     rm -rf /usr/local/bin/hysteria $workspace
+
+    # If port hopping was enabled, remove the iptables and ip6tables rules
+    if [[ ! -z $firstport && ! -z $endport ]]; then
+        iptables -t nat -D PREROUTING -p udp --dport $firstport:$endport -j DNAT --to-destination :$port
+        ip6tables -t nat -D PREROUTING -p udp --dport $firstport:$endport -j DNAT --to-destination :$port
+        netfilter-persistent save >/dev/null 2>&1
+    fi
+
     _green "Uninstalled successfully"
 }
 
 boot() {
-    systemctl start hysteria.service
+    systemctl start hysteria
     sleep 2
-    if systemctl is-active --quiet hysteria.service; then
+    if systemctl is-active --quiet hysteria; then
         msg ok "Hysteria started successfully."
     else
         msg err "Hysteria failed to start."
-        systemctl status hysteria.service
+        systemctl status hysteria
         return 1
     fi  
 }
@@ -365,14 +408,19 @@ reboot() {
 changeconfig() {
     local key=$1
     local newValue=$2
-    local configFile="/etc/hysteria/config.json"
+    local configFile="/etc/hysteria/config.yaml"
 
+    # 更新YAML文件中的键值
     echo "Updating $key to $newValue in the config file."
-    
-    jq ".$key = \"$newValue\"" $configFile > /tmp/config.json && mv /tmp/config.json $configFile
 
-    echo "$key updated successfully."
-    systemctl restart hysteria
+    yq eval ".$key = \"$newValue\"" -i $configFile
+
+    if [ $? -eq 0 ]; then
+        echo "$key updated successfully."
+        systemctl restart hysteria
+    else
+        echo "Failed to update $key."
+    fi
 }
 
 #// update_core(){
