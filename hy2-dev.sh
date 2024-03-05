@@ -257,9 +257,8 @@ create_config() {
 EOF
 
     msg ok "Configuration created successfully."
-
-    cat > proxy_surge.ini << EOF
-Proxy-HY = hysteria, $domain, $port, password=$auth_password, sni=$proxy_site
+    cat > "$workspace/proxy_surge.ini" << EOF
+    Proxy-HY = hysteria, $domain, $port, password=$auth_password, sni=$proxy_site
 EOF
 }
 
@@ -277,7 +276,7 @@ install() {
     fi
 
     msg info "Installing Hysteria..."
-    bash <(curl -fsSL https://get.hy.com) && msg ok "Hysteria installed." || {
+    bash <(curl -fsSL https://get.hy2.com) && msg ok "Hysteria installed." || {
         msg err "Hysteria installation failed."
         exit 1
     }
