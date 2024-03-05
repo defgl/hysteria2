@@ -69,7 +69,7 @@ fullchain="/root/cert/fullchain.pem"
 privatekey="/root/cert/private.key"
 workspace="/etc/hysteria"
 service="/etc/systemd/system/hysteria"
-config="$workspace/config.yaml"
+config="$workspace/config.json"
 
 # Install missing packages
 install_dependencies() {
@@ -275,6 +275,13 @@ create_config() {
         port=$(find_unused_port)
     fi
 
+    read -rp "Do you want to enable Port Hopping? (Enter 'yes' to enable, leave blank for 'no'): " enableHopping
+    if [[ $enableHopping == "yes" ]]; then
+        port_hopping
+    else
+        last_port=$port
+    fi
+
     check_cert "$domain"
 
     read -rp "Enter the password (leave blank for random): " auth_password
@@ -285,13 +292,6 @@ create_config() {
     read -rp "Enter the masquerade site (leave blank for www.playstation.com): " proxy_site
     if [[ -z $proxy_site ]]; then
         proxy_site="www.playstation.com"
-    fi
-
-    read -rp "Do you want to enable Port Hopping? (Enter 'yes' to enable, leave blank for 'no'): " enableHopping
-    if [[ $enableHopping == "yes" ]]; then
-        port_hopping
-    else
-        last_port=$port
     fi
 
     cat <<EOF > $config
@@ -416,19 +416,14 @@ reboot() {
 changeconfig() {
     local key=$1
     local newValue=$2
-    local configFile="/etc/hysteria/config.yaml"
+    local configFile="/etc/hysteria/config.json"
 
-    # 更新YAML文件中的键值
     echo "Updating $key to $newValue in the config file."
+    
+    jq ".$key = \"$newValue\"" $configFile > /tmp/config.json && mv /tmp/config.json $configFile
 
-    yq eval ".$key = \"$newValue\"" -i $configFile
-
-    if [ $? -eq 0 ]; then
-        echo "$key updated successfully."
-        systemctl restart hysteria
-    else
-        echo "Failed to update $key."
-    fi
+    echo "$key updated successfully."
+    systemctl restart hysteria
 }
 
 #// update_core(){
