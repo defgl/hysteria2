@@ -274,7 +274,7 @@ install() {
             *) menu ;;
         esac
     else
-        install_pkg
+        install_dependencies
     fi
 
     msg info "Installing Hysteria..."
