@@ -67,7 +67,6 @@ setup_environment() {
 
 fullchain="/root/cert/fullchain.pem"
 privatekey="/root/cert/private.key"
-config="/etc/hysteria/config.json"
 workspace="/etc/hysteria"
 service="/etc/systemd/system/hysteria.service"
 config="$workspace/config.json"
@@ -278,7 +277,7 @@ install() {
     fi
 
     msg info "Installing Hysteria..."
-    bash <(curl -fsSL https://get.hy.com) && "Hysteria installed." || {
+    bash <(curl -fsSL https://get.hy.com) && msg ok "Hysteria installed." || {
         msg err "Hysteria installation failed."
         exit 1
     }
@@ -428,10 +427,9 @@ modify() {
     esac
 }
 
-
 checkconfig() {
-    if [[ -f "$config_file" ]]; then
-        cat "$config_file"
+    if [[ -f "$config" ]]; then
+        cat "$config"
     else
         msg err "Configuration file not found."
     fi
