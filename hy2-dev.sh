@@ -74,13 +74,21 @@ config="$workspace/config.yaml"
 # Install missing packages
 install_dependencies() {
     _yellow "Checking and installing missing dependencies..."
-    local dependencies=("wget" "unzip" "jq" "yq" "net-tools" "socat" "curl" "cron" "dnsutils")
+    local dependencies=("wget" "unzip" "jq" "net-tools" "socat" "curl" "cron" "dnsutils")
     if command -v apt-get &>/dev/null; then
         apt-get update -y
         apt-get install -y dnsutils ${dependencies[@]}
+        if ! command -v yq &>/dev/null; then
+            apt-get install -y python3-pip
+            pip3 install yq
+        fi
     elif command -v yum &>/dev/null; then
         yum makecache fast
         yum install -y bind-utils ${dependencies[@]}
+        if ! command -v yq &>/dev/null; then
+            yum install -y python3-pip
+            pip3 install yq
+        fi
     else
         msg err "Unsupported package manager. Script supports apt-get (Debian/Ubuntu) and yum (CentOS/RHEL)."
         exit 1
