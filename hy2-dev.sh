@@ -178,45 +178,28 @@ check_cert() {
 apply_cert() {
     local domain=$1
     local force=$2
-    if [ -z "$domain" ]; then
-        msg err "Domain name is required."
-        return 1
-    fi
-
-    local method=${2:-"acme"} # 默认使用 ACME 方法
-    local cert_dir="$cert_dir/$domain" # 为每个域名指定一个证书存储目录
-
-    if [ ! -d "$cert_dir" ]; then
-        mkdir -p "$cert_dir" # 创建证书存储目录
-    fi
-
+    # Check if acme.sh is installed
     if [ ! -f "/root/.acme.sh/acme.sh" ]; then
         echo "Installing acme.sh..."
         curl https://get.acme.sh | sh
     fi
-
     echo "Applying for an ACME certificate for $domain..."
-    if [[ "$method" == "acme" ]]; then
-        #~/.acme.sh/acme.sh --issue --force --standalone -d "$domain" --keylength ec-256 --server letsencrypt
-        ~/.acme.sh/acme.sh --install-cert -d $domain --ecc --fullchain-file $fullchain --key-file $private_key --reloadcmd "systemctl restart hysteria"
-        if [ $? -ne 0 ]; then
-            msg err "Failed to issue certificate for $domain."
-            return 1
-        fi
-
-        ~/.acme.sh/acme.sh --install-cert -d "$domain" --ecc \
-            --fullchain-file "$cert_dir/fullchain.pem" \
-            --key-file "$cert_dir/private.key"
-        msg ok "ACME certificate applied for $domain."
+    if [[ "$force" == "force" ]]; then
+        ~/.acme.sh/acme.sh --issue --force --standalone -d "$domain" --keylength ec-256 --server letsencrypt
     else
-        msg err "Unsupported method for applying certificate."
+        ~/.acme.sh/acme.sh --issue --standalone -d "$domain" --keylength ec-256 --server letsencrypt
+    fi
+    if [ $? -ne 0 ]; then
+        msg err "Failed to issue certificate for $domain."
         return 1
     fi
-
-    fullchain="$cert_dir/fullchain.pem"
-    private_key="$cert_dir/private.key"
-    msg ok "Certificate path: $fullchain"
-    msg ok "Key path: $private_key"
+    
+    ~/.acme.sh/acme.sh --install-cert -d "$domain" --ecc \
+        --fullchain-file "$fullchain" \
+        --key-file "$privatekey" \
+        --reloadcmd "systemctl restart hysteria"
+    
+    msg ok "ACME certificate applied for $domain."
 }
 
 update_cert() {
