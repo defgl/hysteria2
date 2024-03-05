@@ -65,8 +65,9 @@ setup_environment() {
     fi
 }
 
-fullchain="/root/cert/fullchain.pem"
-privatekey="/root/cert/private.key"
+cert_dir="/root/cert"
+fullchain="$cert_dir/fullchain.pem"
+private_key="$cert_dir/private.key"
 workspace="/etc/hysteria"
 service="/etc/systemd/system/hysteria"
 config="$workspace/config.json"
@@ -176,6 +177,7 @@ check_cert() {
 
 apply_cert() {
     local domain=$1
+    local force=$2
     if [ -z "$domain" ]; then
         msg err "Domain name is required."
         return 1
@@ -195,7 +197,8 @@ apply_cert() {
 
     echo "Applying for an ACME certificate for $domain..."
     if [[ "$method" == "acme" ]]; then
-        ~/.acme.sh/acme.sh --issue --force --standalone -d "$domain" --keylength ec-256 --server letsencrypt
+        #~/.acme.sh/acme.sh --issue --force --standalone -d "$domain" --keylength ec-256 --server letsencrypt
+        ~/.acme.sh/acme.sh --install-cert -d $domain --ecc --fullchain-file $fullchain --key-file $private_key --reloadcmd "systemctl restart hysteria"
         if [ $? -ne 0 ]; then
             msg err "Failed to issue certificate for $domain."
             return 1
@@ -291,7 +294,7 @@ create_config() {
   "listen": ":$port",
   "tls": {
     "cert": "$fullchain",
-    "key": "$privatekey"
+    "key": "$private_key"
   },
   "auth": "$auth_password",
   "masquerade": {
@@ -357,12 +360,26 @@ uninstall(){
     rm -f $service
     rm -rf /usr/local/bin/hysteria $workspace
 
+    echo "Removing all certificate files from $cert_dir ..."
+    rm -rf $cert_dir
+    echo "Certificate files have been removed."
+
+    if [ -d "/root/.acme.sh/" ]; then
+        echo "Removing acme.sh directory..."
+        rm -rf /root/.acme.sh/
+        echo "acme.sh directory has been removed."
+    else
+        echo "acme.sh directory not found. Skipping removal."
+    fi
+    
+
     # If port hopping was enabled, remove the iptables and ip6tables rules
     if [[ ! -z $firstport && ! -z $endport ]]; then
         iptables -t nat -D PREROUTING -p udp --dport $firstport:$endport -j DNAT --to-destination :$port
         ip6tables -t nat -D PREROUTING -p udp --dport $firstport:$endport -j DNAT --to-destination :$port
         netfilter-persistent save >/dev/null 2>&1
     fi
+
 
     _green "Uninstalled successfully"
 }
@@ -533,7 +550,7 @@ changecert() {
 
 menu() {
     clear
-    echo -e "${cyan}Hysteria 2${reset}"
+    echo -e "${cyan}                        Hysteria 2${reset}"
     echo "----------------------------------------------------------------------------------"
     echo -e "${cyan}At what speed must I live, to be able to see you again?${reset}"
     echo "----------------------------------------------------------------------------------"
