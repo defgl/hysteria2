@@ -287,18 +287,21 @@ create_config() {
     fi
 
     cat <<EOF > $config
-listen: :$port
-tls:
-  cert: $fullchain
-  key: $privatekey
-auth:
-  type: password
-  password: $auth_password
-masquerade:
-  type: proxy
-  proxy:
-    url: https://$proxy_site
-  rewriteHost: true
+{
+  "listen": ":$port",
+  "tls": {
+    "cert": "$fullchain",
+    "key": "$privatekey"
+  },
+  "auth": "$auth_password",
+  "masquerade": {
+    "type": "proxy",
+    "proxy": {
+      "url": "https://$proxy_site"
+    },
+    "rewriteHost": true
+  }
+}
 EOF
 
     msg ok "Configuration created successfully."
