@@ -162,10 +162,15 @@ check_cert() {
 
 apply_cert() {
     local domain=$1
-    local method=${2:-"acme"} # 默认使用ACME方法
+    local method=${2:-"acme"} # 默认使用 ACME 方法
     local cert_dir="/root/cert/$domain" # 为每个域名指定一个证书存储目录
-    
-    
+
+    # 确保域名非空
+    if [[ -z "$domain" ]]; then
+        msg err "Domain name is required."
+        return 1
+    fi
+
     mkdir -p "$cert_dir" # 创建证书存储目录
 
     if [[ "$method" == "acme" ]]; then
@@ -174,10 +179,19 @@ apply_cert() {
             echo "Installing acme.sh..."
             curl https://get.acme.sh | sh
         fi
-        ~/.acme.sh/acme.sh --issue --force --ecc --standalone -d "$domain" --keylength ec-256 --server letsencrypt
-        ~/.acme.sh/acme.sh --install-cert -d $domain --ecc \
+
+        # 注意：已移除 --ecc 参数，确保使用正确的参数格式
+        ~/.acme.sh/acme.sh --issue --force --standalone -d "$domain" --keylength ec-256 --server letsencrypt
+
+        if [[ $? -ne 0 ]]; then
+            msg err "Failed to issue certificate for $domain."
+            return 1
+        fi
+
+        ~/.acme.sh/acme.sh --install-cert -d "$domain" \
             --fullchain-file "$cert_dir/fullchain.pem" \
             --key-file "$cert_dir/private.key"
+
         echo "ACME certificate applied for $domain."
     elif [[ "$method" == "openssl" ]]; then
         echo "Generating an OpenSSL certificate for $domain..."
@@ -186,12 +200,13 @@ apply_cert() {
         echo "OpenSSL certificate generated for $domain."
     fi
 
-    # 更新证书路径变量
+    # 更新证书路径变量，移除路径中的多余斜杠
     fullchain="$cert_dir/fullchain.pem"
     privatekey="$cert_dir/private.key"
     echo "Certificate path: $fullchain"
     echo "Key path: $privatekey"
 }
+
 
 update_cert() {
     local domain=$1
