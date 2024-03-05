@@ -68,7 +68,9 @@ setup_environment() {
 fullchain="/root/cert/fullchain.pem"
 privatekey="/root/cert/private.key"
 config="/etc/hysteria/config.json"
-hysteria_service="hysteria-server"
+workspace="/etc/hysteria"
+service="/etc/systemd/system/hysteria.service"
+config="$workspace/config.json"
 
 # Install missing packages
 install_dependencies() {
@@ -98,14 +100,23 @@ check_domain() {
     get_ip
     local domain_ips_v4=$(dig +short A $domain @1.1.1.1)
     local domain_ips_v6=$(dig +short AAAA $domain @1.1.1.1)
+    final_ip="" # Initialize final_ip as an empty string
 
-    if [[ $domain_ips_v4 =~ $ipv4 ]] || [[ $domain_ips_v6 =~ $ipv6 ]]; then
-        msg ok "Domain $domain correctly resolves to this server IP."
+    if [[ $domain_ips_v4 =~ $ipv4 ]]; then
+        final_ip=$ipv4
+        msg ok "Domain $domain correctly resolves to this server IPv4: $ipv4."
+    elif [[ $domain_ips_v6 =~ $ipv6 ]]; then
+        final_ip=$ipv6
+        msg ok "Domain $domain correctly resolves to this server IPv6: $ipv6."
     else
         msg err "Domain $domain does not resolve to this server IP."
         exit 1
     fi
+    if [[ -n $final_ip ]]; then
+        echo "Matched: $final_ip"
+    fi
 }
+
 
 # Corrected 'is_port_used' function to properly check port usage
 is_port_used() {
@@ -199,126 +210,142 @@ del_cert() {
     echo "Certificate for $domain removed."
 }
 
-# Configuration creation
+create_systemd() {
+    cat > $service << EOF
+[Unit]
+Description=Hysteria is a feature-packed proxy & relay tool optimized for lossy, unstable connections
+Documentation=https://github.com/HyNetwork/hysteria
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=$workspace
+ExecStart=/usr/local/bin/hysteria -c $config
+Restart=on-failure
+RestartPreventExitStatus=23
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload
+    systemctl enable hysteria
+    msg ok "Systemd service created."
+}
+
+
 # Configuration creation including domain, port, password, and masquerade site
 create_config() {
-    msg info "Configuring Hysteria..."
-    read -rp "Enter your domain (Required for ACME certificate): " domain
+    read -rp "Drop your domain name here: " domain
     check_domain "$domain"
-    cert_method="acme" # Default to ACME. "openssl" for OpenSSL certificates.
-    apply_cert "$domain" "$cert_method"
 
     local port=$(find_unused_port)
-    local auth_pwd=$(generate_random_password)
-    local proxysite="www.example.com" # Default masquerade site
+    local auth_password=$(generate_random_password 16)
+    local proxy_site="www.example.com"
 
-    cat <<EOF > /etc/hysteria/config.json
+    cat <<EOF > $config
 {
   "listen": ":$port",
   "tls": {
-    "cert": "/root/cert/fullchain.pem",
-    "key": "/root/cert/private.key"
+    "cert": "$fullchain",
+    "key": "$privatekey"
   },
   "auth": {
     "type": "password",
-    "password": "$auth_pwd"
+    "password": "$auth_password"
   },
-  "obfs": "$proxysite"
+  "obfs": "$proxy_site"
 }
 EOF
+
     msg ok "Configuration created successfully."
+
+    cat > proxy_surge.ini << EOF
+Proxy-HY = hysteria, $domain, $port, password=$auth_password, sni=$proxy_site
+EOF
 }
+
 
 # Hysteria installation, uninstallation, and management functions
 install() {
-    setup_environment
-    install_dependencies
+    if [[ -e "$service" ]]; then
+        read -rp "Reinstall? (y/n): " input
+        case "$input" in
+            y|Y) uninstall ;;
+            *) menu ;;
+        esac
+    else
+        install_pkg
+    fi
 
-    # 创建配置
+    msg info "Installing Hysteria..."
+    bash <(curl -fsSL https://get.hy.com) && "Hysteria installed." || {
+        msg err "Hysteria installation failed."
+        exit 1
+    }
+
+    mkdir -p "$workspace"
+    check_cert "$domain"
+
+    create_systemd
     create_config
 
-    # 安装 Hysteria 2
-    bash <(curl -fsSL https://get.hy2.sh/)
-
-    if [[ -f "/usr/local/bin/hysteria" ]]; then
-        _green "Installation successful."
-    else
-        _red "Installation failed."
-        exit 1
-    fi
-
-    mkdir -p /root/hy
-
-    # 生成 Surge 配置格式的节点信息
-    get_ip  # 更新此函数以获取并处理 $ipv4 和 $ipv6
-    local port=$(jq -r '.listen' /etc/hysteria/config.json | cut -d':' -f2)
-    local password=$(jq -r '.auth.password' /etc/hysteria/config.json)
-    local sni=$(jq -r '.obfs' /etc/hysteria/config.json)
-
-    # 确保这里使用正确的 IP 地址或域名
-    local ip_or_domain="适当的逻辑来确定使用 $ipv4 或 $domain"
-    
-    surge_format="Proxy-HY2 = hysteria2, $ip_or_domain, $port, password=$password, sni=$sni, download-bandwidth=1000, skip-cert-verify=true"
-    echo "$surge_format" > /root/hy/proxy-surge.ini
-
-    systemctl daemon-reload
-    systemctl enable hysteria-server
-    systemctl start hysteria-server
-
-    if systemctl is-active --quiet hysteria-server; then
-        _green "Hysteria 2 started successfully."
-        echo ""
-        _blue "A faint clap of thunder, Clouded skies."
-        _blue "Perhaps rain comes."
-        echo ""
-        _cyan " ^_^ ^_^"
-        _cyan "   ^_^  "
-        echo ""
-        _cyan "$(cat /root/hy/proxy-surge.ini)"
-    else
-        _red "Hysteria 2 failed to start. Try 'systemctl status hysteria-server' for details. Exiting."
-        exit 1
-    fi
+    boot
+    msg ok "Hysteria deployed successfully."
+    msg ok "------------------------ FOR SURGE USE ONLY ------------------------\n"
+    cat "${workspace}/proxy_surge.ini"
+    echo ""
+    echo "----------------------------------------------------------------------------\n"
 }
+
 
 
 uninstall(){
-    systemctl stop hysteria-server.service >/dev/null 2>&1
-    systemctl disable hysteria-server.service >/dev/null 2>&1
-    rm -f /lib/systemd/system/hysteria-server.service /lib/systemd/system/hysteria-server@.service
-    rm -rf /usr/local/bin/hysteria /etc/hysteria /root/hy /root/hysteria.sh
-    iptables -t nat -F PREROUTING >/dev/null 2>&1
-    netfilter-persistent save >/dev/null 2>&1
-
+    systemctl stop hysteria.service >/dev/null 2>&1
+    systemctl disable hysteria.service >/dev/null 2>&1
+    rm -f $service
+    rm -rf /usr/local/bin/hysteria $workspace
     green "Uninstalled successfully"
 }
 
-boot(){
-    systemctl start hysteria-server
-    systemctl enable hysteria-server >/dev/null 2>&1
+boot() {
+    systemctl start hysteria.service
+    sleep 2
+    if systemctl is-active --quiet hysteria.service; then
+        msg ok "Hysteria started successfully."
+    else
+        msg err "Hysteria failed to start."
+        systemctl status hysteria.service
+        return 1
+    fi  
 }
 
-stop(){
-    systemctl stop hysteria-server
-    systemctl disable hysteria-server >/dev/null 2>&1
+stop() {
+    systemctl stop hysteria
+    msg ok "Hysteria has been stopped."
 }
 
-switch(){
-    random_color "Perhaps rain comes."
-    random_color "If so, will you stay here with me?"
-    echo ""
-    echo -e " ${GREEN}1.${PLAIN} Start"
-    echo -e " ${GREEN}2.${PLAIN} Shutdown"
-    echo -e " ${GREEN}3.${PLAIN} Restart"
-    echo ""
-    read -rp "Option [0-3]: " switchInput
-    case $switchInput in
-        1 ) boot ;;
-        2 ) stop ;;
-        3 ) stop && boot ;;
-        * ) exit 1 ;;
-    esac
+reboot() {
+    stop
+    sleep 2
+    start
 }
+
+#// switch(){
+#//     random_color "Perhaps rain comes."
+#//     random_color "If so, will you stay here with me?"
+#//     echo ""
+#//     echo -e " ${GREEN}1.${PLAIN} Start"
+#//     echo -e " ${GREEN}2.${PLAIN} Shutdown"
+#//     echo -e " ${GREEN}3.${PLAIN} Restart"
+#//     echo ""
+#//     read -rp "Option [0-3]: " switchInput
+#//     case $switchInput in
+#//         1 ) boot ;;
+#//         2 ) stop ;;
+#//         3 ) stop && boot ;;
+#//         * ) exit 1 ;;
+#//     esac
+#// }
 
 
 changeconfig() {
@@ -328,14 +355,11 @@ changeconfig() {
 
     echo "Updating $key to $newValue in the config file."
     
-    # 使用jq工具修改JSON配置（确保已安装jq）
     jq ".$key = \"$newValue\"" $configFile > /tmp/config.json && mv /tmp/config.json $configFile
 
     echo "$key updated successfully."
-    systemctl restart hysteria-server
+    systemctl restart hysteria
 }
-
-
 
 #// update_core(){
 #//     # ReInstall Hysteria 2
@@ -345,20 +369,22 @@ changeconfig() {
 
 # Manage Hysteria service (start, stop, restart)
 manage() {
-    echo "1. Boot"
-    echo "2. Stop"
-    echo "3. Reboot"
-    echo "4. Config"
-    echo "5. Menu"
-    read -rp "Choose an option(1/2/3/4/5): " choice
+    _green "1. Boot"
+    _red "2. Stop" 
+    _yellow "3. Reboot"
+   echo "4. Modify Config"
+    echo "4. View Config"
+    echo "5. Back to Main Menu"
+    read -p "Select operation (1-5): " operation
 
-    case $choice in
-        1 ) boot ;;
-        2 ) stop ;;
-        3 ) stop && boot ;;
+    case $operation in
+        1) boot ;;
+        2) stop ;;
+        3) reboot ;;
         4) modify ;;
+        4) checkconfig ;;
         5) menu ;;
-        *) msg err "Invalid option. Please choose again." && manage ;;
+        *) msg err "Invalid operation." ;;
     esac
 }
 
