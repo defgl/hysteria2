@@ -33,7 +33,8 @@ warn() {
 
 # Function to display messages with corrected '-e' option for echo
 msg() {
-    timestamp=$(TZ=Asia/Shanghai date "+%Y.%m.%d-%H:%M:%S")
+    #timestamp=$(TZ=Asia/Shanghai date "+%Y.%m.%d-%H:%M:%S")
+    timestamp=$(TZ=Asia/Shanghai date "+%H:%M:%S")
     case $1 in
         err) echo -e "${red}[error | ${reset}${purple}${timestamp}${reset}${red}] $2${reset}" ;;
         warn) echo -e "${yellow}[warning | ${reset}${purple}${timestamp}${reset}${yellow}] $2${reset}" ;;
@@ -229,7 +230,7 @@ After=network.target
 [Service]
 User=root
 WorkingDirectory=$workspace
-ExecStart=/usr/local/bin/hysteria -c $config
+ExecStart=/usr/local/bin/hysteria -c $config server
 Restart=on-failure
 RestartPreventExitStatus=23
 
