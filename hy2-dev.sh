@@ -276,7 +276,7 @@ install() {
     fi
 
     msg info "Installing Hysteria..."
-    bash <(curl -fsSL https://get.hy2.com) && msg ok "Hysteria installed." || {
+    bash <(curl -fsSL https://get.hy2.sh/) && msg ok "Hysteria installed." || {
         msg err "Hysteria installation failed."
         exit 1
     }
