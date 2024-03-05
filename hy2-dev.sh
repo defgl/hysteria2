@@ -303,7 +303,7 @@ uninstall(){
     systemctl disable hysteria.service >/dev/null 2>&1
     rm -f $service
     rm -rf /usr/local/bin/hysteria $workspace
-    green "Uninstalled successfully"
+    _green "Uninstalled successfully"
 }
 
 boot() {
@@ -326,7 +326,7 @@ stop() {
 reboot() {
     stop
     sleep 2
-    start
+    boot
 }
 
 #// switch(){
@@ -371,9 +371,9 @@ manage() {
     _green "1. Boot"
     _red "2. Stop" 
     _yellow "3. Reboot"
-   echo "4. Modify Config"
-    echo "4. View Config"
-    echo "5. Back to Main Menu"
+    echo "4. Modify Config"
+    echo "5. View Config"
+    echo "6. Back to Main Menu"
     read -p "Select operation (1-5): " operation
 
     case $operation in
@@ -381,8 +381,8 @@ manage() {
         2) stop ;;
         3) reboot ;;
         4) modify ;;
-        4) checkconfig ;;
-        5) menu ;;
+        5) checkconfig ;;
+        6) menu ;;
         *) msg err "Invalid operation." ;;
     esac
 }
