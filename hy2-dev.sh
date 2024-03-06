@@ -70,7 +70,7 @@ cert_dir="/root/cert"
 fullchain="$cert_dir/fullchain.pem"
 private_key="$cert_dir/private.key"
 workspace="/etc/hysteria"
-service="/etc/systemd/system/hysteria"
+service="/etc/systemd/system/hysteria.service"
 config="$workspace/config.json"
 
 # Install missing packages
