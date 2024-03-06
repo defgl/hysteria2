@@ -395,7 +395,7 @@ uninstall(){
 }
 
 boot() {
-    systemctl start hysteria
+    systemctl enable --now hysteria
     sleep 2
     if systemctl is-active --quiet hysteria; then
         msg ok "Hysteria started successfully."
