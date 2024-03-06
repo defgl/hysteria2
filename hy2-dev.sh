@@ -105,19 +105,18 @@ check_domain() {
 
     if [[ $domain_ips_v4 =~ $ipv4 ]]; then
         final_ip=$ipv4
-        msg ok "Domain $domain correctly resolves to this server IPv4: $ipv4."
+        msg ok "Domain $domain resolves to this server IPv4: $ipv4."
     elif [[ $domain_ips_v6 =~ $ipv6 ]]; then
         final_ip=$ipv6
-        msg ok "Domain $domain correctly resolves to this server IPv6: $ipv6."
+        msg ok "Domain $domain resolves to this server IPv6: $ipv6."
     else
-        msg err "Domain $domain does not resolve to this server IP."
+        msg err "Domain $domain does not resolve to server IP."
         exit 1
     fi
     if [[ -n $final_ip ]]; then
         echo "Matched: $final_ip"
     fi
 }
-
 
 # Corrected 'is_port_used' function to properly check port usage
 is_port_used() {
@@ -145,18 +144,22 @@ find_unused_port() {
 }
 
 port_hopping() {
-    read -p "Enter start port for range (recommended 10000-65535): " firstport
-    read -p "Enter end port for range (must be greater than start port): " endport
-    while [[ $firstport -ge $endport ]]; do
-        red "Start port must be less than end port. Please retry start and end ports."
-        read -p "Enter start port for range (recommended 10000-65535): " firstport
-        read -p "Enter end port for range (recommended 10000-65535, must be greater than start port): " endport
+    while true; do
+        read -p "Start port (10000-65535): " firstport
+        read -p "End port (> start port): " endport
+        if [[ $firstport -ge 10000 && $firstport -le 65535 && $endport -gt $firstport && $endport -le 65535 ]]; then
+            break
+        else
+            msg warn "Invalid port range. Please try again."
+        fi
     done
+    
     iptables -t nat -A PREROUTING -p udp --dport $firstport:$endport -j DNAT --to-destination :$port
     ip6tables -t nat -A PREROUTING -p udp --dport $firstport:$endport -j DNAT --to-destination :$port
     netfilter-persistent save >/dev/null 2>&1
     last_port="$port,$firstport-$endport"
 }
+
 
 check_cert() {
     local domain=$1
@@ -242,36 +245,26 @@ EOF
     msg ok "Systemd service created."
 }
 
-
 # Configuration creation including domain, port, password, and masquerade site
+
 create_config() {
     is_port_used 80
-    read -rp "Drop your domain name here: " domain
+    read -p "Domain name: " domain
     check_domain "$domain"
 
-    read -rp "Enter the port (leave blank for random): " port
-    if [[ -z $port ]]; then
-        port=$(find_unused_port)
-    fi
+    read -p "Port (leave blank for random): " port
+    [[ -z $port ]] && port=$(find_unused_port)
 
-    read -rp "Do you want to enable Port Hopping? (Enter 'yes' to enable, leave blank for 'no'): " enableHopping
-    if [[ $enableHopping == "yes" ]]; then
-        port_hopping
-    else
-        last_port=$port
-    fi
+    read -p "Enable port hopping? (y/n): " enableHopping
+    [[ $enableHopping == [Yy] ]] && port_hopping || last_port=$port
 
     check_cert "$domain"
 
-    read -rp "Enter the password (leave blank for random): " auth_password
-    if [[ -z $auth_password ]]; then
-        auth_password=$(generate_random_password 16)
-    fi
+    read -p "Password (leave blank for random): " auth_password
+    [[ -z $auth_password ]] && auth_password=$(generate_random_password 16)
 
-    read -rp "Enter the masquerade site (leave blank for www.playstation.com): " proxy_site
-    if [[ -z $proxy_site ]]; then
-        proxy_site="www.playstation.com"
-    fi
+    read -p "Masquerade site (default: www.playstation.com): " proxy_site
+    [[ -z $proxy_site ]] && proxy_site="www.playstation.com"
 
     cat <<EOF > $config
 {
@@ -280,23 +273,41 @@ create_config() {
     "cert": "$fullchain",
     "key": "$private_key"
   },
-  "auth": "$auth_password",
+  "auth": {
+    "type": "password",
+    "password": "$auth_password"
+  },
   "masquerade": {
     "type": "proxy",
     "proxy": {
       "url": "https://$proxy_site"
     },
     "rewriteHost": true
+  },
+
+  "bandwidth": {
+    "up": "0 gbps",
+    "down": "0 gbps"
+  },
+  "udpIdleTimeout": "90s",
+  "ignoreClientBandwidth": false,
+
+    "quic": {
+    "initStreamReceiveWindow": 26843545,
+    "maxStreamReceiveWindow": 26843545,
+    "initConnReceiveWindow": 67108864,
+    "maxConnReceiveWindow": 67108864,
+    "maxIdleTimeout": "90s",
+    "maxIncomingStreams": 1800,
+    "disablePathMTUDiscovery": false
   }
 }
 EOF
 
-    msg ok "Configuration created successfully."
+    msg ok "Configuration created."
 
     # Add brackets to IPv6 addresses
-    if [[ -n $(echo $final_ip | grep ":") ]]; then
-        final_ip="[$final_ip]"
-    fi
+    [[ $final_ip =~ : ]] && final_ip="[$final_ip]"
 
     cat > "$workspace/proxy_surge.ini" << EOF
 Proxy-HY = hysteria, $final_ip, $last_port, password=$auth_password, sni=$proxy_site
@@ -328,10 +339,12 @@ install() {
 
     boot
     msg ok "Hysteria deployed successfully."
-    msg ok "------------------------ FOR SURGE USE ONLY ------------------------\n"
+    echo "----------------------------------------------------------------------------"
+    msg ok "-------------- ### FOR SURGE USE ONLY ### --------------"
+    echo ""
     cat "${workspace}/proxy_surge.ini"
     echo ""
-    echo "----------------------------------------------------------------------------\n"
+    echo "----------------------------------------------------------------------------"
 }
 
 
@@ -462,15 +475,15 @@ modify() {
 
     case $choice in
         1)
-            read -rp "Enter new port: " newPort
+            read -rp "New port: " newPort
             changeconfig "listen" ":$newPort"
             ;;
         2)
-            read -rp "Enter new password: " newPassword
+            read -rp "New password: " newPassword
             changeconfig "auth.password" "$newPassword"
             ;;
         3)
-            read -rp "Enter new masquerade site (e.g., www.example.com): " newSite
+            read -rp "New masquerade site (e.g., www.example.com): " newSite
             changeconfig "obfs" "$newSite"
             ;;
         4)
@@ -509,7 +522,7 @@ changecert() {
         1)
             read -rp "Enter domain for the new certificate: " domain
             apply_cert "$domain" "acme"
-            echo "New certificate applied. Hysteria needs to be restarted."
+            echo "New certificate applied. Restart Hysteria to take effect."
             ;;
         2)
             read -rp "Enter domain of the certificate to revoke: " domain
@@ -519,7 +532,7 @@ changecert() {
         3)
             read -rp "Enter domain of the certificate to update: " domain
             update_cert "$domain"
-            echo "Certificate renewal setup updated."
+            echo "Certificate renewal updated."
             ;;
         4)
             menu
