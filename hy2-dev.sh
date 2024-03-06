@@ -344,16 +344,18 @@ install() {
     }
 
     mkdir -p "$workspace"
-
+    chmod +x /usr/local/bin/hysteria
     create_systemd
     create_config
 
     boot
     msg ok "Hysteria deployed successfully."
     echo "----------------------------------------------------------------------------"
-    msg ok "-------------- ### FOR SURGE USE ONLY ### --------------"
+    msg ok "                         ### FOR SURGE USE ONLY ###                 "
+    echo ""
     echo ""
     cat "${workspace}/proxy_surge.ini"
+    echo ""
     echo ""
     echo "----------------------------------------------------------------------------"
 }
