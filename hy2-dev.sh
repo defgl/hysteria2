@@ -187,23 +187,29 @@ apply_cert() {
         echo "Installing acme.sh..."
         curl https://get.acme.sh | sh
     fi
-    echo "Applying for an ACME certificate for $domain..."
-    if [[ "$force" == "force" ]]; then
-        ~/.acme.sh/acme.sh --issue --force --standalone -d "$domain" --keylength ec-256 --server letsencrypt
+
+    echo "Getting certificate for ${domain}..."
+    if [[ $force == "force" ]]; then
+        ~/.acme.sh/acme.sh --issue --force --ecc --standalone -d $domain --keylength ec-256 --server letsencrypt
     else
-        ~/.acme.sh/acme.sh --issue --standalone -d "$domain" --keylength ec-256 --server letsencrypt
+        ~/.acme.sh/acme.sh --issue --ecc --standalone -d $domain --keylength ec-256 --server letsencrypt
     fi
-    if [ $? -ne 0 ]; then
-        msg err "Failed to issue certificate for $domain."
-        return 1
-    fi
-    
-    ~/.acme.sh/acme.sh --install-cert -d "$domain" --ecc \
-        --fullchain-file "$fullchain" \
-        --key-file "$privatekey" \
+
+    # Create cert_dir if it does not exist
+    mkdir -p $cert_dir
+
+    ~/.acme.sh/acme.sh --install-cert -d $domain --ecc \
+        --fullchain-file $fullchain \
+        --key-file $private_key \
         --reloadcmd "systemctl restart hysteria"
-    
-    msg ok "ACME certificate applied for $domain."
+
+    if [ $? -ne 0 ]; then
+        msg err "Failed to get the certificate."
+        return 1
+    else
+        msg ok "Certificate path: $fullchain"
+        msg ok "Key path: $private_key"
+    fi
 }
 
 update_cert() {
@@ -240,9 +246,14 @@ RestartPreventExitStatus=23
 [Install]
 WantedBy=multi-user.target
 EOF
-    systemctl daemon-reload
-    systemctl enable hysteria
-    msg ok "Systemd service created."
+
+    if [ $? -eq 0 ]; then
+        systemctl daemon-reload
+        systemctl enable hysteria
+        msg ok "Systemd service created: $service"
+    else
+        msg err "Failed to create systemd service."
+    fi
 }
 
 # Configuration creation including domain, port, password, and masquerade site
