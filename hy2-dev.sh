@@ -321,7 +321,7 @@ EOF
     [[ $final_ip =~ : ]] && final_ip="[$final_ip]"
 
     cat > "$workspace/proxy_surge.ini" << EOF
-Proxy-HY = hysteria, $final_ip, $last_port, password=$auth_password, sni=$proxy_site
+Proxy-Hysteria = hysteria2, $final_ip, $last_port, password=$auth_password, sni=$proxy_site, skip-cert-verify=true, download-bandwidth=1000
 EOF
 }
 
