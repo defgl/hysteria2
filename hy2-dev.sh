@@ -33,15 +33,23 @@ warn() {
 
 # Function to display messages with corrected '-e' option for echo
 msg() {
-    #timestamp=$(TZ=Asia/Shanghai date "+%Y.%m.%d-%H:%M:%S")
+    local color="${reset}"  # 初始化默认颜色为重置
+    local type="log"        # 初始化默认消息类型
+
+    # 根据类型设置颜色和前缀
     case $1 in
-        err) echo -e "${red}ERR: ${reset}${purple}${timestamp}${reset}${red} $2${reset}" ;;
-        warn) echo -e "${yellow}WARN: ${reset}${purple}${timestamp}${reset}${yellow} $2${reset}" ;;
-        ok) echo -e "${green}SUCC: ${reset}${purple}${timestamp}${reset}${green} $2${reset}" ;;
-        info) echo -e "MSG: ${reset}${purple}${timestamp}${reset} $2${reset}" ;;
-        *) echo -e "LOG: ${reset}${purple}${timestamp}${reset} $2${reset}" ;;
+        err)  color="${red}"; type="error"    ;;
+        warn) color="${yellow}"; type="warning" ;;
+        ok)   color="${green}"; type="success" ;;
+        info) color="${cyan}";  type="info"   ;;
     esac
+
+    local timestamp="$(TZ=Asia/Shanghai date +"%Y.%m.%d-%H:%M:%S")"  # 时间戳
+    
+    # 输出消息
+    echo -e "${color}${type}: ${reset}${purple}${timestamp}${reset} $2${reset}" 
 }
+
 
 
 random_color() {
@@ -96,22 +104,46 @@ get_ip() {
 
 # Verify domain is pointing to the server's IP
 check_domain() {
-    local domain=$1
+    domain=$1
+
+    # 检查域名是否为空
+    if [[ -z $domain ]]; then
+        err "Domain cannot be empty."
+        return 1
+    fi
+
+    # 获取公网 IP 地址
     get_ip
+
+    # 使用本地 dig 命令解析域名
+    local domain_ips_v4_local=$(dig +short A $domain)
+    local domain_ips_v6_local=$(dig +short AAAA $domain)
+
+    # 检查本地解析结果是否指向本机
+    if [[ $domain_ips_v4_local =~ $ipv4 ]]; then
+        _green "Domain $domain resolves to this server IPv4: $ipv4 (local dig)."
+        return 0
+    elif [[ $domain_ips_v6_local =~ $ipv6 ]]; then
+        _green "Domain $domain resolves to this server IPv6: $ipv6 (local dig)."
+        return 0
+    fi
+
+    # 使用 Cloudflare DNS 解析域名
     local domain_ips_v4=$(dig +short A $domain @1.1.1.1)
     local domain_ips_v6=$(dig +short AAAA $domain @1.1.1.1)
     final_ip="" # Initialize final_ip as an empty string
 
     if [[ $domain_ips_v4 =~ $ipv4 ]]; then
         final_ip=$ipv4
-        msg ok "Domain $domain resolves to this server IPv4: $ipv4."
+        _green "Domain $domain resolves to this server IPv4: $ipv4 (Cloudflare DNS)."
     elif [[ $domain_ips_v6 =~ $ipv6 ]]; then
         final_ip=$ipv6
-        msg ok "Domain $domain resolves to this server IPv6: $ipv6."
+        _green "Domain $domain resolves to this server IPv6: $ipv6 (Cloudflare DNS)."
     else
         msg err "Domain $domain does not resolve to server IP."
         exit 1
     fi
+
     if [[ -n $final_ip ]]; then
         echo "Matched: $final_ip"
     fi
@@ -337,10 +369,12 @@ install() {
     fi
 
     msg info "Installing Hysteria..."
-    bash <(curl -fsSL https://get.hy2.sh/) && msg ok "Hysteria installed." || {
+    if bash <(curl -fsSL https://get.hy2.sh/); then 
+        msg ok "Hysteria installed." 
+    else
         msg err "Hysteria installation failed."
         exit 1
-    }
+    fi
 
     mkdir -p "$workspace"
     chmod +x /usr/local/bin/hysteria
@@ -348,17 +382,15 @@ install() {
     create_config
 
     boot
-    msg ok "Hysteria deployed successfully."
-    echo ""
-    echo "----------------------------------------------------------------------------"
-    echo ""
-    echo ""
+    msg ok "Hysteria deployed successfully." 
+
+    # 美观的分隔线
+    echo -e "${cyan}----------------------------------------------------------------------------${reset}"
+
+    # Surge 输出部分
     _cyan "### FOR SURGE USE ONLY ###"
-    echo ""
-    echo ""
+    echo "" # 增加一点空行 
     cat "${workspace}/proxy_surge.ini"
-    echo ""
-    echo ""
 }
 
 
