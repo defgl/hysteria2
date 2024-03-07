@@ -353,7 +353,7 @@ install() {
     echo "----------------------------------------------------------------------------"
     echo ""
     echo ""
-    _yellow "### FOR SURGE USE ONLY ###"
+    _cyan "### FOR SURGE USE ONLY ###"
     echo ""
     echo ""
     cat "${workspace}/proxy_surge.ini"
