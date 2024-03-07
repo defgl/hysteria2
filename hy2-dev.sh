@@ -115,19 +115,6 @@ check_domain() {
     # 获取公网 IP 地址
     get_ip
 
-    # 使用本地 dig 命令解析域名
-    local domain_ips_v4_local=$(dig +short A $domain)
-    local domain_ips_v6_local=$(dig +short AAAA $domain)
-
-    # 检查本地解析结果是否指向本机
-    if [[ $domain_ips_v4_local =~ $ipv4 ]]; then
-        _green "Domain $domain resolves to this server IPv4: $ipv4 (local dig)."
-        return 0
-    elif [[ $domain_ips_v6_local =~ $ipv6 ]]; then
-        _green "Domain $domain resolves to this server IPv6: $ipv6 (local dig)."
-        return 0
-    fi
-
     # 使用 Cloudflare DNS 解析域名
     local domain_ips_v4=$(dig +short A $domain @1.1.1.1)
     local domain_ips_v6=$(dig +short AAAA $domain @1.1.1.1)
@@ -135,10 +122,10 @@ check_domain() {
 
     if [[ $domain_ips_v4 =~ $ipv4 ]]; then
         final_ip=$ipv4
-        _green "Domain $domain resolves to this server IPv4: $ipv4 (Cloudflare DNS)."
+        _green "Domain $domain resolves to this server IPv4: $ipv4."
     elif [[ $domain_ips_v6 =~ $ipv6 ]]; then
         final_ip=$ipv6
-        _green "Domain $domain resolves to this server IPv6: $ipv6 (Cloudflare DNS)."
+        _green "Domain $domain resolves to this server IPv6: $ipv6."
     else
         msg err "Domain $domain does not resolve to server IP."
         exit 1
