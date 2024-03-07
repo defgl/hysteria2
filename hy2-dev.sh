@@ -34,13 +34,12 @@ warn() {
 # Function to display messages with corrected '-e' option for echo
 msg() {
     #timestamp=$(TZ=Asia/Shanghai date "+%Y.%m.%d-%H:%M:%S")
-    timestamp=$(TZ=Asia/Shanghai date "+%H:%M:%S")
     case $1 in
-        err) echo -e "${red}[error | ${reset}${purple}${timestamp}${reset}${red}] $2${reset}" ;;
-        warn) echo -e "${yellow}[warning | ${reset}${purple}${timestamp}${reset}${yellow}] $2${reset}" ;;
-        ok) echo -e "${green}[success | ${reset}${purple}${timestamp}${reset}${green}] $2${reset}" ;;
-        info) echo -e "[info | ${reset}${purple}${timestamp}${reset}] $2${reset}" ;;
-        *) echo -e "[log | ${reset}${purple}${timestamp}${reset}] $2${reset}" ;;
+        err) echo -e "${red}error: ${reset}${purple}${timestamp}${reset}${red}] $2${reset}" ;;
+        warn) echo -e "${yellow}warning: ${reset}${purple}${timestamp}${reset}${yellow}] $2${reset}" ;;
+        ok) echo -e "${green}success: ${reset}${purple}${timestamp}${reset}${green}] $2${reset}" ;;
+        info) echo -e "[msg: ${reset}${purple}${timestamp}${reset}] $2${reset}" ;;
+        *) echo -e "[log: ${reset}${purple}${timestamp}${reset}] $2${reset}" ;;
     esac
 }
 
