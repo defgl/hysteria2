@@ -350,14 +350,16 @@ install() {
 
     boot
     msg ok "Hysteria deployed successfully."
+    echo ""
     echo "----------------------------------------------------------------------------"
-    msg ok "                         ### FOR SURGE USE ONLY ###                 "
+    echo ""
+    echo ""
+    _yellow "### FOR SURGE USE ONLY ###"
     echo ""
     echo ""
     cat "${workspace}/proxy_surge.ini"
     echo ""
     echo ""
-    echo "----------------------------------------------------------------------------"
 }
 
 
