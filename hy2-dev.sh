@@ -315,10 +315,10 @@ create_config() {
   },
 
   "bandwidth": {
-    "up": "0 gbps",
-    "down": "0 gbps"
+    "up": "1 gbps",
+    "down": "1 gbps"
   },
-  "udpIdleTimeout": "90s",
+  "udpIdleTimeout": "60s",
   "ignoreClientBandwidth": false,
 
     "quic": {
@@ -326,8 +326,8 @@ create_config() {
     "maxStreamReceiveWindow": 26843545,
     "initConnReceiveWindow": 67108864,
     "maxConnReceiveWindow": 67108864,
-    "maxIdleTimeout": "90s",
-    "maxIncomingStreams": 1800,
+    "maxIdleTimeout": "30s",
+    "maxIncomingStreams": 1024,
     "disablePathMTUDiscovery": false
   }
 }
